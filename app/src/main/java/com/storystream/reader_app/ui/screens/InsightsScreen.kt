@@ -26,11 +26,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +44,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.collect
 
 @Composable
 fun InsightsScreen(
@@ -59,9 +59,11 @@ fun InsightsScreen(
     val email = userEmail
     val appColors = LocalAppColors.current
 
-    val insights by remember { derivedStateOf { viewModel.insights } }
-    val loading by remember { derivedStateOf { viewModel.loading } }
-    val error by remember { derivedStateOf { viewModel.error } }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val insights = uiState.insights
+    val loading = uiState.loading
+    val error = uiState.error
 
     // Derive effective tier from server response, fallback to passed-in param
     val effectiveTier = insights?.user?.tier ?: userTier
@@ -69,6 +71,16 @@ fun InsightsScreen(
     // Refresh insights each time this screen enters composition (tab switch)
     LaunchedEffect(Unit) {
         viewModel.loadInsights()
+    }
+
+    // Consume one-shot events (e.g., upgrade result)
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { ev ->
+            when (ev) {
+                "upgrade_success" -> onUpgrade()
+                // add other event handling if needed
+            }
+        }
     }
 
     AppTheme {
@@ -186,11 +198,11 @@ fun InsightsScreen(
                         }
                     }
                     error != null -> {
-                        Text(text = error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                     }
                     insights != null -> {
-                        val daily = insights!!.dailyUsage
-                        val serverTier = insights!!.user.tier
+                        val daily = insights.dailyUsage
+                        val serverTier = insights.user.tier
                         val showUsage = serverTier != "PREMIUM"
                         val progress = if (daily.isUnlimited || daily.limit == 0) 1f else (daily.reads.toFloat() / daily.limit.toFloat()).coerceIn(0f, 1f)
 
@@ -234,7 +246,7 @@ fun InsightsScreen(
                         }
 
                         // ---- Top Sections as Chips ----
-                        if (insights!!.topSections.isNotEmpty()) {
+                        if (insights.topSections.isNotEmpty()) {
                             Text(
                                 text = "Top Sections",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -246,7 +258,7 @@ fun InsightsScreen(
                                     .fillMaxWidth()
                                     .horizontalScroll(rememberScrollState())
                             ) {
-                                insights!!.topSections.forEach { section ->
+                                insights.topSections.forEach { section ->
                                     Surface(
                                         shape = RoundedCornerShape(20.dp),
                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
@@ -276,7 +288,7 @@ fun InsightsScreen(
                         }
 
                         // ---- Recent History ----
-                        if (insights!!.recentHistory.isNotEmpty()) {
+                        if (insights.recentHistory.isNotEmpty()) {
                             Text(
                                 text = "Recent History",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -284,7 +296,7 @@ fun InsightsScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            insights!!.recentHistory.take(3).forEach { item ->
+                            insights.recentHistory.take(3).forEach { item ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()

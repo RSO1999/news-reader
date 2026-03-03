@@ -1,50 +1,63 @@
 package com.storystream.reader_app.ui.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
-import kotlinx.coroutines.launch
 import com.storystream.reader_app.data.SavedRefreshManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class TrendingUiState(
+    val trendingArticles: List<ArticleResponse> = emptyList(),
+    val loading: Boolean = false,
+    val error: String? = null
+)
 
 @HiltViewModel
 class TrendingViewModel @Inject constructor(
     private val repo: ArticlesRepository
 ) : ViewModel() {
-    var trendingArticles by mutableStateOf<List<ArticleResponse>>(emptyList())
-        private set
-    var loading by mutableStateOf(false)
-        private set
-    var error by mutableStateOf<String?>(null)
-        private set
+
+    private val _uiState = MutableStateFlow(TrendingUiState())
+    val uiState: StateFlow<TrendingUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val events: SharedFlow<String> = _events.asSharedFlow()
 
     fun loadTrending(limit: Int = 10) {
-        if (loading) return
-        loading = true
-        error = null
+        val current = _uiState.value
+        if (current.loading) return
+
+        _uiState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
             val res = repo.getTrending(limit)
-            loading = false
             if (res.isSuccess) {
-                trendingArticles = res.getOrNull() ?: emptyList()
+                _uiState.update { it.copy(trendingArticles = res.getOrNull() ?: emptyList(), loading = false) }
             } else {
-                error = res.exceptionOrNull()?.localizedMessage ?: "Failed to load trending"
+                _uiState.update { it.copy(loading = false, error = res.exceptionOrNull()?.localizedMessage ?: "Failed to load trending") }
             }
         }
     }
 
     fun saveArticle(id: String) {
         viewModelScope.launch {
-            repo.saveArticle(id)
+            val res = repo.saveArticle(id)
             // notify saved list to refresh
-            // best effort: fire and forget; repository handles networking errors
-            // trigger refresh (non-suspending)
             SavedRefreshManager.triggerRefresh()
+            if (res.isSuccess) {
+                _events.emit("save_ok")
+            } else {
+                _events.emit("save_failed")
+            }
         }
     }
 }

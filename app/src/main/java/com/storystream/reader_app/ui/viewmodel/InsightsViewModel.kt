@@ -5,39 +5,44 @@ import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ReadingInsightsResponse
 import com.storystream.reader_app.repository.ArticlesRepository
 import com.storystream.reader_app.repository.AuthRepository
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+@Suppress("unused")
+data class InsightsUiState(
+    val insights: ReadingInsightsResponse? = null,
+    val loading: Boolean = false,
+    val error: String? = null
+)
 
 @HiltViewModel
 class InsightsViewModel @Inject constructor(
     private val articlesRepo: ArticlesRepository,
     private val authRepo: AuthRepository
 ) : ViewModel() {
-    var insights by mutableStateOf<ReadingInsightsResponse?>(null)
-        private set
-    var loading by mutableStateOf(false)
-        private set
-    var error by mutableStateOf<String?>(null)
-        private set
 
-    init {
-        loadInsights()
-    }
+    private val _uiState = MutableStateFlow(InsightsUiState())
+    val uiState: StateFlow<InsightsUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<String>()
+    val events: SharedFlow<String> = _events.asSharedFlow()
 
     fun loadInsights() {
+        _uiState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            loading = true
-            error = null
             val res = articlesRepo.getUserInsights()
-            loading = false
             if (res.isSuccess) {
-                insights = res.getOrNull()
+                _uiState.update { it.copy(insights = res.getOrNull(), loading = false) }
             } else {
-                error = res.exceptionOrNull()?.localizedMessage ?: "Failed to load insights"
+                _uiState.update { it.copy(loading = false, error = res.exceptionOrNull()?.localizedMessage ?: "Failed to load insights") }
             }
         }
     }
@@ -48,6 +53,9 @@ class InsightsViewModel @Inject constructor(
             if (res.isSuccess) {
                 // Reload insights from server to get updated premium state
                 loadInsights()
+                _events.emit("upgrade_success")
+            } else {
+                _events.emit("upgrade_failed")
             }
         }
     }

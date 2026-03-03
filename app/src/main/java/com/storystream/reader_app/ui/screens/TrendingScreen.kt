@@ -1,5 +1,6 @@
 package com.storystream.reader_app.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,8 +9,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -17,15 +20,33 @@ import com.storystream.reader_app.ui.components.AnimatedListItem
 import com.storystream.reader_app.ui.components.ArticleCard
 import com.storystream.reader_app.ui.theme.AppTheme
 import com.storystream.reader_app.ui.viewmodel.TrendingViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun TrendingScreen(onOpenArticle: (String) -> Unit = {}, viewModel: TrendingViewModel) {
+fun TrendingScreen(onOpenArticle: (String) -> Unit = {}, viewModel: TrendingViewModel = viewModel()) {
+    val context = LocalContext.current
+
+    // lifecycle-aware collection of UiState
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val trendingArticles = uiState.trendingArticles
+    val loading = uiState.loading
+    val error = uiState.error
+
+    // Trigger load on composition
     LaunchedEffect(Unit) {
         viewModel.loadTrending()
     }
-    val trendingArticles = viewModel.trendingArticles
-    val loading = viewModel.loading
-    val error = viewModel.error
+
+    // Consume one-shot events (show toast for save result)
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { ev ->
+            when (ev) {
+                "save_ok" -> Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+                "save_failed" -> Toast.makeText(context, "Save failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     AppTheme {
         Column(
