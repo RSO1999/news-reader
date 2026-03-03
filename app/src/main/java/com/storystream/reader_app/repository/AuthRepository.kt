@@ -39,6 +39,19 @@ class AuthRepository {
         }
     }
 
+    suspend fun upgradeUser(): Result<Unit> {
+        return try {
+            val resp = api.upgradeUser()
+            // replace stored token with new premium token
+            SecureTokenStore.clearTokens()
+            SecureTokenStore.saveToken(resp.token)
+            UserSession.restoreFromToken(resp.token)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun logout() {
         SecureTokenStore.clearToken()
         UserSession.logout()

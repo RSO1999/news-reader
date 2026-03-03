@@ -89,10 +89,6 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
                             .padding(start = 8.dp)
                             .height(36.dp)
                             .widthIn(min = 64.dp)
-                            .clickable {
-                                isSaved.value = true
-                                onSave(article.id)
-                            }
                     ) {
                         Box(modifier = Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
                             Text(
@@ -100,7 +96,12 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.clickable {
+                                    isSaved.value = true
+                                    // call out to onSave; the caller should handle server call and refresh
+                                    onSave(article.id)
+                                }
                             )
                         }
                     }
@@ -113,49 +114,42 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
 @Composable
 fun FeatureCard(
     title: String,
+    imageUrl: String?,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp)
             .padding(8.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Placeholder hero
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.primary)
-            )
-            Box(modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onPrimary
+        Column {
+            if (!imageUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .background(MaterialTheme.colorScheme.surface)
                 )
             }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(16.dp)
+            )
         }
-    }
-}
-
-@Composable
-fun TopicChip(text: String, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(6.dp),
-        color = MaterialTheme.colorScheme.surface
-    ) {
-        Text(
-            text = text.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-        )
     }
 }

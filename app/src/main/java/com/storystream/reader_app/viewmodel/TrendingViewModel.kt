@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
+import com.storystream.reader_app.data.SavedRefreshManager
 import kotlinx.coroutines.launch
 
 class TrendingViewModel(private val repo: ArticlesRepository = ArticlesRepository()) : ViewModel() {
@@ -35,6 +36,10 @@ class TrendingViewModel(private val repo: ArticlesRepository = ArticlesRepositor
     fun saveArticle(id: String) {
         viewModelScope.launch {
             repo.saveArticle(id)
+            // notify saved list to refresh
+            // best effort: fire and forget; repository handles networking errors
+            // trigger refresh (non-suspending)
+            SavedRefreshManager.triggerRefresh()
         }
     }
 }

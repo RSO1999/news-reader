@@ -18,15 +18,6 @@ data class TopSection(val section: String, val views: Int, val percent: Double)
 
 data class DailyUsage(val date: String, val reads: Int, val limit: Int, val isUnlimited: Boolean)
 
-data class ReadingInsights(
-    val userEmail: String?,
-    val tier: String,
-    val dailyUsage: DailyUsage,
-    val topSections: List<TopSection>,
-    val recentHistory: List<ArticleResponse>
-)
-
-// Context models for AI context responses
 data class ContextEntity(
     val title: String,
     @SerializedName("summary")
@@ -37,3 +28,22 @@ data class ContextEntity(
 )
 
 data class ContextResponse(val entities: List<ContextEntity>)
+
+data class UserInfo(val email: String?, val tier: String)
+
+data class ArticleSummary(
+    val articleId: String,
+    val title: String,
+    val section: String,
+    val snippet: String,
+    val imageUrl: String? = null,
+    val publishedAt: String,
+    val sourceName: String
+)
+
+data class ReadingInsightsResponse(
+    val user: UserInfo,
+    val dailyUsage: DailyUsage,
+    val topSections: List<TopSection>,
+    val recentHistory: List<ArticleSummary>
+)

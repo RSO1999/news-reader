@@ -21,6 +21,8 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
     val articles by remember { derivedStateOf { viewModel.articles } }
     val loading by remember { derivedStateOf { viewModel.loading } }
     val error by remember { derivedStateOf { viewModel.error } }
+    val topStory = articles.firstOrNull()
+    val feedItems = if (articles.isNotEmpty()) articles.drop(1) else emptyList()
     val listState = rememberLazyListState()
 
     // load first page on composition
@@ -60,15 +62,17 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                 }
             } else {
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                    item {
-                        FeatureCard(title = "Top Story: Placeholder", onClick = { onOpenArticle("feature") })
+                    if (topStory != null) {
+                        item {
+                            FeatureCard(title = topStory.title, imageUrl = topStory.imageUrl, onClick = { onOpenArticle(topStory.id) })
+                        }
                     }
 
-                    itemsIndexed(articles) { index, article ->
+                    itemsIndexed(feedItems) { index, article ->
                         ArticleCard(article = article, onClick = { onOpenArticle(article.id) }, onSave = { id -> viewModel.saveArticle(id) })
 
                         // trigger load when near end
-                        if (index >= articles.lastIndex - 3 && !loading && viewModel.page <= viewModel.totalPages) {
+                        if (index >= feedItems.lastIndex - 3 && !loading && viewModel.page <= viewModel.totalPages) {
                             viewModel.loadNextPage()
                         }
                     }

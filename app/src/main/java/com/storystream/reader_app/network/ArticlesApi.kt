@@ -2,6 +2,7 @@ package com.storystream.reader_app.network
 
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.data.ContextResponse
+import com.storystream.reader_app.data.ReadingInsightsResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -31,4 +32,10 @@ interface ArticlesApi {
 
     @POST("/api/articles/{id}/save")
     suspend fun postSave(@Path("id") id: String): SaveResponse
+
+    @GET("/api/user/insights")
+    suspend fun getUserInsights(): ReadingInsightsResponse
+
+    @GET("/api/user/saved")
+    suspend fun getSaved(@Query("limit") limit: Int = 50): List<ArticleResponse>
 }

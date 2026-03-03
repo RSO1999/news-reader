@@ -124,11 +124,15 @@ class MainActivity : ComponentActivity() {
                                     when (currentTab) {
                                         "Home" -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId = id })
                                         "Trending" -> TrendingScreen(onOpenArticle = { id: String -> currentArticleId = id }, viewModel = trendingVm)
-                                        "Saved" -> SavedScreen()
-                                        "Insights" -> InsightsScreen(onUpgrade = { UserSession.setPremium() }, onLogout = {
-                                            // clear auth state and return to login
-                                            isAuthenticated = false
-                                        })
+                                        "Saved" -> SavedScreen(onOpenArticle = { id: String -> currentArticleId = id })
+                                        "Insights" -> InsightsScreen(
+                                            onUpgrade = { UserSession.setPremium() },
+                                            onLogout = {
+                                                // clear auth state and return to login
+                                                isAuthenticated = false
+                                            },
+                                            onOpenArticle = { id: String -> currentArticleId = id }
+                                        )
                                         else -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId = id })
                                     }
                                 }

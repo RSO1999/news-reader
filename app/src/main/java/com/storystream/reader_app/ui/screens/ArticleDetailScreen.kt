@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.storystream.reader_app.ui.theme.AppTheme
 import com.storystream.reader_app.ui.components.Masthead
-import com.storystream.reader_app.data.LocalStore
 import com.storystream.reader_app.data.UserSession
 import com.storystream.reader_app.repository.ArticlesRepository
 import com.storystream.reader_app.data.ContextEntity
@@ -25,6 +24,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import com.storystream.reader_app.data.SavedRefreshManager
 
 @Composable
 fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAuth: () -> Unit = {}) {
@@ -51,7 +51,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
             if (resp.isSuccessful) {
                 article = resp.body()
                 // record view locally
-                LocalStore.recordView(articleId)
+                // LocalStore.recordView(articleId) // removed; server is source of truth
             } else {
                 if (resp.code() == 403) {
                     gated = true
@@ -116,8 +116,8 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Body placeholder
-                    Text(text = "Full article would render here or open externalUrl.")
+
+
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -125,7 +125,17 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
                         IconButton(onClick = {
                             isSaved = true
                             coroutineScope.launch {
-                                repo.saveArticle(articleId)
+                                val res = repo.saveArticle(articleId)
+                                if (res.isSuccess) {
+                                    // notify using coroutine
+                                    try {
+                                        SavedRefreshManager.triggerRefresh()
+                                    } catch (_: Exception) {
+                                    }
+                                    isSaved = true
+                                } else {
+                                    isSaved = false
+                                }
                             }
                         }) {
                             Icon(

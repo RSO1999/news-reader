@@ -2,6 +2,7 @@ package com.storystream.reader_app.repository
 
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.data.ContextResponse
+import com.storystream.reader_app.data.ReadingInsightsResponse
 import com.storystream.reader_app.network.ArticlesApi
 import com.storystream.reader_app.network.NetworkModule
 import retrofit2.Response
@@ -49,6 +50,24 @@ class ArticlesRepository {
         return try {
             val resp = api.postSave(id)
             Result.success(resp.status == "saved")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserInsights(): Result<ReadingInsightsResponse> {
+        return try {
+            val resp = api.getUserInsights()
+            Result.success(resp)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getSaved(limit: Int): Result<List<ArticleResponse>> {
+        return try {
+            val resp = api.getSaved(limit)
+            Result.success(resp)
         } catch (e: Exception) {
             Result.failure(e)
         }

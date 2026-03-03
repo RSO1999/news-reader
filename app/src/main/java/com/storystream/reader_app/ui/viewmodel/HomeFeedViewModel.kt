@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
+import com.storystream.reader_app.data.SavedRefreshManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -71,6 +72,8 @@ class HomeFeedViewModel(private val repo: ArticlesRepository = ArticlesRepositor
             val res = repo.saveArticle(id)
             if (res.isSuccess) {
                 lastSaveStatus = "ok"
+                // notify saved list to refresh from server
+                SavedRefreshManager.triggerRefresh()
             } else {
                 lastSaveStatus = "failed"
             }
