@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
 import kotlinx.coroutines.launch
+import com.storystream.reader_app.data.SavedRefreshManager
 
 class TrendingViewModel(private val repo: ArticlesRepository = ArticlesRepository()) : ViewModel() {
     var trendingArticles by mutableStateOf<List<ArticleResponse>>(emptyList())
