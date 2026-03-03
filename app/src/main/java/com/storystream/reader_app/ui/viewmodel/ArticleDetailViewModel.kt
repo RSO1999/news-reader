@@ -7,7 +7,9 @@ import com.storystream.reader_app.data.ContextEntity
 import com.storystream.reader_app.repository.ArticlesRepository
 import com.storystream.reader_app.repository.AuthRepository
 import com.storystream.reader_app.data.SavedRefreshManager
+import com.storystream.reader_app.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @Suppress("unused")
@@ -40,7 +43,8 @@ sealed class ArticleDetailEvent {
 @HiltViewModel
 class ArticleDetailViewModel @Inject constructor(
     private val repo: ArticlesRepository,
-    private val authRepo: AuthRepository
+    private val authRepo: AuthRepository,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ArticleDetailUiState())
@@ -64,7 +68,7 @@ class ArticleDetailViewModel @Inject constructor(
                 )
             }
 
-            val res = repo.getArticle(articleId)
+            val res = withContext(ioDispatcher) { repo.getArticle(articleId) }
             if (res.isSuccess) {
                 val resp = res.getOrNull()!!
                 if (resp.isSuccessful) {
@@ -85,7 +89,7 @@ class ArticleDetailViewModel @Inject constructor(
     fun loadContext(articleId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(contextLoading = true, contextLocked = false) }
-            val cres = repo.getContext(articleId)
+            val cres = withContext(ioDispatcher) { repo.getContext(articleId) }
             if (cres.isSuccess) {
                 val r = cres.getOrNull()!!
                 if (r.isSuccessful) {
@@ -108,7 +112,7 @@ class ArticleDetailViewModel @Inject constructor(
 
     fun saveArticle(id: String) {
         viewModelScope.launch {
-            val res = repo.saveArticle(id)
+            val res = withContext(ioDispatcher) { repo.saveArticle(id) }
             if (res.isSuccess) {
                 _uiState.update { it.copy(isSaved = true) }
                 SavedRefreshManager.triggerRefresh()
@@ -122,7 +126,7 @@ class ArticleDetailViewModel @Inject constructor(
 
     fun upgradeUser(articleId: String) {
         viewModelScope.launch {
-            val res = authRepo.upgradeUser()
+            val res = withContext(ioDispatcher) { authRepo.upgradeUser() }
             if (res.isSuccess) {
                 // Reload article to unlock gated content
                 loadArticle(articleId)

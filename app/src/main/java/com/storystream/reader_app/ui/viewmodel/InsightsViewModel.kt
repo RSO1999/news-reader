@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ReadingInsightsResponse
 import com.storystream.reader_app.repository.ArticlesRepository
 import com.storystream.reader_app.repository.AuthRepository
+import com.storystream.reader_app.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @Suppress("unused")
@@ -31,7 +34,8 @@ sealed class InsightsEvent {
 @HiltViewModel
 class InsightsViewModel @Inject constructor(
     private val articlesRepo: ArticlesRepository,
-    private val authRepo: AuthRepository
+    private val authRepo: AuthRepository,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InsightsUiState())
@@ -43,7 +47,7 @@ class InsightsViewModel @Inject constructor(
     fun loadInsights() {
         _uiState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            val res = articlesRepo.getUserInsights()
+            val res = withContext(ioDispatcher) { articlesRepo.getUserInsights() }
             if (res.isSuccess) {
                 _uiState.update { it.copy(insights = res.getOrNull(), loading = false) }
             } else {
@@ -54,7 +58,7 @@ class InsightsViewModel @Inject constructor(
 
     fun upgradeUser() {
         viewModelScope.launch {
-            val res = authRepo.upgradeUser()
+            val res = withContext(ioDispatcher) { authRepo.upgradeUser() }
             if (res.isSuccess) {
                 // Reload insights from server to get updated premium state
                 loadInsights()

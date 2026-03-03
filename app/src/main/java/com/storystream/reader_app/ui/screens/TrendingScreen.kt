@@ -132,7 +132,8 @@ fun TrendingScreen(onOpenArticle: (String) -> Unit = {}, viewModel: TrendingView
                                             article = article,
                                             modifier = Modifier.padding(start = 8.dp, end = 16.dp),
                                             onClick = { onOpenArticle(article.id) },
-                                            onSave = { id -> viewModel.saveArticle(id) }
+                                            onSave = { id -> viewModel.saveArticle(id) },
+                                            isSaved = false
                                         )
                                     }
                                 }

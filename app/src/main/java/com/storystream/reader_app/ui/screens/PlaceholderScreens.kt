@@ -142,7 +142,8 @@ fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? =
                                             scope.launch {
                                                 vm.saveArticle(id)
                                             }
-                                        }
+                                        },
+                                        isSaved = true
                                     )
                                 }
                             }

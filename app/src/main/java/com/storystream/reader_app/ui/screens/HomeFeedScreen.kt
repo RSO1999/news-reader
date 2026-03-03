@@ -138,7 +138,8 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                                     publishedAt = topStory.publishedAt,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                     onClick = { onOpenArticle(topStory.id) },
-                                    onSave = { viewModel.saveArticle(topStory.id) }
+                                    onSave = { viewModel.saveArticle(topStory.id) },
+                                    isSaved = false
                                 )
                             }
                         }
@@ -179,7 +180,8 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                                 article = article,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                                 onClick = { onOpenArticle(article.id) },
-                                onSave = { id -> viewModel.saveArticle(id) }
+                                onSave = { id -> viewModel.saveArticle(id) },
+                                isSaved = false
                             )
                         }
 

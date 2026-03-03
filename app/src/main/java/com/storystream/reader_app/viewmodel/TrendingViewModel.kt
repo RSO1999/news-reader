@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.storystream.reader_app.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class TrendingUiState(
@@ -29,7 +32,8 @@ sealed class TrendingEvent {
 
 @HiltViewModel
 class TrendingViewModel @Inject constructor(
-    private val repo: ArticlesRepository
+    private val repo: ArticlesRepository,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TrendingUiState())
@@ -44,7 +48,7 @@ class TrendingViewModel @Inject constructor(
 
         _uiState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            val res = repo.getTrending(limit)
+            val res = withContext(ioDispatcher) { repo.getTrending(limit) }
             if (res.isSuccess) {
                 _uiState.update { it.copy(trendingArticles = res.getOrNull() ?: emptyList(), loading = false) }
             } else {
@@ -55,7 +59,7 @@ class TrendingViewModel @Inject constructor(
 
     fun saveArticle(id: String) {
         viewModelScope.launch {
-            val res = repo.saveArticle(id)
+            val res = withContext(ioDispatcher) { repo.saveArticle(id) }
             // notify saved list to refresh
             SavedRefreshManager.triggerRefresh()
             if (res.isSuccess) {

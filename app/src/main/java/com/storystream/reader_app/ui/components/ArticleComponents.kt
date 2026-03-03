@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -66,8 +65,7 @@ fun AnimatedListItem(
 }
 
 @Composable
-fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick: () -> Unit = {}, onSave: (String) -> Unit = {}) {
-    val isSaved = remember { mutableStateOf(false) }
+fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick: () -> Unit = {}, onSave: (String) -> Unit = {}, isSaved: Boolean = false) {
     val appColors = LocalAppColors.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed = interactionSource.collectIsPressedAsState()
@@ -174,9 +172,8 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
 
             // SaveButton top-right
             SaveButton(
-                isSaved = isSaved.value,
+                isSaved = isSaved,
                 onClick = {
-                    isSaved.value = !isSaved.value
                     onSave(article.id)
                 }
             )

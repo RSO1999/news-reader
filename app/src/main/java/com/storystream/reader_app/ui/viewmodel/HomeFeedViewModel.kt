@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
 import com.storystream.reader_app.data.SavedRefreshManager
+import com.storystream.reader_app.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class HomeFeedUiState(
@@ -32,7 +35,8 @@ sealed class HomeFeedEvent {
 }
 
 @HiltViewModel
-class HomeFeedViewModel @Inject constructor(private val repo: ArticlesRepository) : ViewModel() {
+class HomeFeedViewModel @Inject constructor(private val repo: ArticlesRepository,
+                                             @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeFeedUiState())
     val uiState: StateFlow<HomeFeedUiState> = _uiState.asStateFlow()
@@ -53,7 +57,7 @@ class HomeFeedViewModel @Inject constructor(private val repo: ArticlesRepository
         _uiState.update { it.copy(loading = true, error = null) }
 
         viewModelScope.launch {
-            val res = repo.getArticles(state.page, 20, state.personalized)
+            val res = withContext(ioDispatcher) { repo.getArticles(state.page, 20, state.personalized) }
             if (res.isSuccess) {
                 val (content, total) = res.getOrNull()!!
                 val existingIds = _uiState.value.articles.map { it.id }.toSet()
@@ -84,7 +88,7 @@ class HomeFeedViewModel @Inject constructor(private val repo: ArticlesRepository
 
     fun saveArticle(id: String) {
         viewModelScope.launch {
-            val res = repo.saveArticle(id)
+            val res = withContext(ioDispatcher) { repo.saveArticle(id) }
             if (res.isSuccess) {
                 _uiState.update { it.copy(lastSaveStatus = "ok") }
                 SavedRefreshManager.triggerRefresh()
