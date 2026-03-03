@@ -20,52 +20,40 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.Surface
 
 // Color tokens from style guide
-val LightPrimary = Color(0xFF0B2545)
-val LightOnPrimary = Color(0xFFFFFFFF)
-val LightSecondary = Color(0xFFB48E4A)
-val LightOnSecondary = Color(0xFFFFFFFF)
-val LightBackground = Color(0xFFFFFFFF)
-val LightSurface = Color(0xFFF6F7F8)
-val LightTextPrimary = Color(0xFF0E1724)
-val LightTextSecondary = Color(0xFF5B6A78)
-val LightDivider = Color(0xFFE6E8EA)
-val LightError = Color(0xFF8B1E1E)
-
-val DarkPrimary = Color(0xFFA8C3FF)
-val DarkOnPrimary = Color(0xFF081227)
-val DarkSecondary = Color(0xFFE6C58A)
-val DarkBackground = Color(0xFF0B0F12)
-val DarkSurface = Color(0xFF0F1720)
-val DarkTextPrimary = Color(0xFFE6EEF8)
-val DarkTextSecondary = Color(0xFF98A0AE)
-val DarkDivider = Color(0xFF1F2933)
-val DarkError = Color(0xFFFFB4B4)
-
 private val LightColors: ColorScheme = lightColorScheme(
-    primary = LightPrimary,
-    onPrimary = LightOnPrimary,
-    secondary = LightSecondary,
-    onSecondary = LightOnSecondary,
-    tertiary = LightTextSecondary,
-    background = LightBackground,
-    surface = LightSurface,
-    onBackground = LightTextPrimary,
-    onSurface = LightTextPrimary,
-    outline = LightDivider,
-    error = LightError
+    primary = PrimaryLight,
+    onPrimary = OnPrimaryLight,
+    secondary = SecondaryLight,
+    onSecondary = OnPrimaryLight, // assuming white
+    tertiary = TertiaryLight,
+    onTertiary = OnPrimaryLight,
+    background = BackgroundLight,
+    onBackground = OnSurfaceLight,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    outline = OutlineLight,
+    error = Color.Red, // placeholder
+    onError = Color.White
 )
 
 private val DarkColors: ColorScheme = darkColorScheme(
-    primary = DarkPrimary,
-    onPrimary = DarkOnPrimary,
-    secondary = DarkSecondary,
-    tertiary = DarkTextSecondary,
-    background = DarkBackground,
-    surface = DarkSurface,
-    onBackground = DarkTextPrimary,
-    onSurface = DarkTextPrimary,
-    outline = DarkDivider,
-    error = DarkError
+    primary = PrimaryDark,
+    onPrimary = OnPrimaryDark,
+    secondary = SecondaryDark,
+    onSecondary = OnPrimaryDark,
+    tertiary = TertiaryDark,
+    onTertiary = OnPrimaryDark,
+    background = BackgroundDark,
+    onBackground = OnSurfaceDark,
+    surface = SurfaceDark,
+    onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OutlineDark,
+    error = Color.Red,
+    onError = Color.White
 )
 
 // Typography tokens — Serif for headlines, Sans for body
