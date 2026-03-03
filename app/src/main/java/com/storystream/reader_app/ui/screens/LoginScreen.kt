@@ -27,6 +27,7 @@ import com.storystream.reader_app.ui.components.Masthead
 import com.storystream.reader_app.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 import com.storystream.reader_app.repository.AuthRepository
+import com.storystream.reader_app.ui.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
@@ -42,7 +43,7 @@ fun LoginScreen(
 
     val emailValid = email.isBlank() || email.contains("@")
     val enabled = email.isNotBlank() && password.isNotBlank() && emailValid && !loading
-    val repo = remember { AuthRepository() }
+    val vm: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val scope = rememberCoroutineScope()
 
     Column(modifier = modifier
@@ -114,12 +115,9 @@ fun LoginScreen(
                     scope.launch {
                         loading = true
                         error = null
-                        val res = repo.login(email.trim(), password)
-                        loading = false
-                        if (res.isSuccess) {
-                            onLogin(email.trim(), password)
-                        } else {
-                            error = res.exceptionOrNull()?.localizedMessage ?: "Login failed"
+                        vm.login(email.trim(), password) { ok ->
+                            loading = false
+                            if (ok) onLogin(email.trim(), password) else error = vm.error
                         }
                     }
                 },

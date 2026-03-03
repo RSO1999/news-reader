@@ -9,12 +9,14 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class InsightsViewModel(
-    private val articlesRepo: ArticlesRepository = ArticlesRepository(),
-    private val authRepo: AuthRepository = AuthRepository()
+@HiltViewModel
+class InsightsViewModel @Inject constructor(
+    private val articlesRepo: ArticlesRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
-
     var insights by mutableStateOf<ReadingInsightsResponse?>(null)
         private set
     var loading by mutableStateOf(false)

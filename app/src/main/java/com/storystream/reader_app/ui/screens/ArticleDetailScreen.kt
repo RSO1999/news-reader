@@ -38,7 +38,7 @@ import androidx.compose.foundation.layout.Box
 import coil.compose.AsyncImage
 
 @Composable
-fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAuth: () -> Unit = {}, viewModel: ArticleDetailViewModel = remember { ArticleDetailViewModel() }, userTier: String = "FREE") {
+fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAuth: () -> Unit = {}, viewModel: ArticleDetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(), userTier: String = "FREE") {
     val article by remember { derivedStateOf { viewModel.article } }
     val contextEntities by remember { derivedStateOf { viewModel.contextEntities } }
     val loading by remember { derivedStateOf { viewModel.loading } }

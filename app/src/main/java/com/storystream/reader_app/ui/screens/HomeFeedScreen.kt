@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,21 +20,22 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.storystream.reader_app.ui.components.AnimatedListItem
 import com.storystream.reader_app.ui.components.ArticleCard
 import com.storystream.reader_app.ui.components.FeatureCard
 import com.storystream.reader_app.ui.theme.AppTheme
 import com.storystream.reader_app.ui.viewmodel.HomeFeedViewModel
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 
 @Composable
-fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedViewModel = remember { HomeFeedViewModel() }) {
-    val articles by remember { derivedStateOf { viewModel.articles } }
-    val loading by remember { derivedStateOf { viewModel.loading } }
-    val error by remember { derivedStateOf { viewModel.error } }
+fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedViewModel = viewModel()) {
+    // collect lifecycle-aware ui state from the viewmodel
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val articles = uiState.articles
+    val loading = uiState.loading
+    val error = uiState.error
     val topStory = articles.firstOrNull()
     val feedItems = if (articles.isNotEmpty()) articles.drop(1) else emptyList()
     val listState = rememberLazyListState()
@@ -71,12 +75,12 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
 
                         // Personalization toggle with animated color
                         val toggleBg by animateColorAsState(
-                            targetValue = if (viewModel.personalized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            targetValue = if (uiState.personalized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                             animationSpec = spring(stiffness = Spring.StiffnessLow),
                             label = "toggleBg"
                         )
                         val toggleFg by animateColorAsState(
-                            targetValue = if (viewModel.personalized) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            targetValue = if (uiState.personalized) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             animationSpec = spring(stiffness = Spring.StiffnessLow),
                             label = "toggleFg"
                         )
@@ -99,7 +103,7 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                                 )
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Text(
-                                    text = if (viewModel.personalized) "For You" else "Personalize",
+                                    text = if (uiState.personalized) "For You" else "Personalize",
                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = toggleFg
                                 )
@@ -166,7 +170,7 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                     }
 
                     // Infinite scroll
-                    if (index >= feedItems.lastIndex - 3 && !loading && viewModel.page <= viewModel.totalPages) {
+                    if (index >= feedItems.lastIndex - 3 && !loading && uiState.page <= uiState.totalPages) {
                         viewModel.loadNextPage()
                     }
                 }

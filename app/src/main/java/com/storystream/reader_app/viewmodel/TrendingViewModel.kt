@@ -9,8 +9,13 @@ import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
 import kotlinx.coroutines.launch
 import com.storystream.reader_app.data.SavedRefreshManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class TrendingViewModel(private val repo: ArticlesRepository = ArticlesRepository()) : ViewModel() {
+@HiltViewModel
+class TrendingViewModel @Inject constructor(
+    private val repo: ArticlesRepository
+) : ViewModel() {
     var trendingArticles by mutableStateOf<List<ArticleResponse>>(emptyList())
         private set
     var loading by mutableStateOf(false)

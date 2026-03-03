@@ -11,10 +11,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.storystream.reader_app.data.SavedRefreshManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class ArticleDetailViewModel(
-    private val repo: ArticlesRepository = ArticlesRepository(),
-    private val authRepo: AuthRepository = AuthRepository()
+@HiltViewModel
+class ArticleDetailViewModel @Inject constructor(
+    private val repo: ArticlesRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
 
     var article by mutableStateOf<ArticleResponse?>(null)

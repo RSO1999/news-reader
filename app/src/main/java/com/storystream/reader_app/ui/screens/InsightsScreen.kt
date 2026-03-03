@@ -45,13 +45,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun InsightsScreen(
     onUpgrade: () -> Unit = {},
     onLogout: () -> Unit = {},
     onOpenArticle: (String) -> Unit = {},
-    viewModel: InsightsViewModel = remember { InsightsViewModel() },
+    viewModel: InsightsViewModel = viewModel(),
     userEmail: String? = null,
     userTier: String = "FREE"
 ) {

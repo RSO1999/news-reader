@@ -40,7 +40,7 @@ fun CreateAccountScreen(
     val emailValid = email.isBlank() || email.contains("@")
     val passwordMatch = confirm.isBlank() || password == confirm
     val canCreate = email.isNotBlank() && emailValid && password.length >= 6 && password == confirm && !loading
-    val repo = remember { AuthRepository() }
+    val vm: com.storystream.reader_app.ui.viewmodel.AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val scope = rememberCoroutineScope()
 
     Column(modifier = modifier
@@ -130,12 +130,9 @@ fun CreateAccountScreen(
                     scope.launch {
                         loading = true
                         error = null
-                        val res = repo.register(email.trim(), password)
-                        loading = false
-                        if (res.isSuccess) {
-                            onCreate(email.trim(), password)
-                        } else {
-                            error = res.exceptionOrNull()?.localizedMessage ?: "Create account failed"
+                        vm.register(email.trim(), password) { ok ->
+                            loading = false
+                            if (ok) onCreate(email.trim(), password) else error = vm.error
                         }
                     }
                 },

@@ -1,11 +1,16 @@
 package com.storystream.reader_app.repository
 
-import com.storystream.reader_app.network.NetworkModule
 import com.storystream.reader_app.data.SecureTokenStore
 import com.storystream.reader_app.data.UserSession
+import com.storystream.reader_app.data.TokenProvider
+import com.storystream.reader_app.network.AuthApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
 data class AuthState(
     val isAuthenticated: Boolean = false,
@@ -37,18 +42,18 @@ object AuthStateHolder {
     }
 }
 
-class AuthRepository {
-    private val api = NetworkModule.authApi
-
+@Singleton
+class AuthRepository @Inject constructor(
+    private val api: AuthApi,
+    private val tokenProvider: TokenProvider
+) {
     suspend fun register(email: String, password: String): Result<Unit> {
         return try {
-            val resp = api.register(com.storystream.reader_app.network.AuthRequest(email, password))
-            // save token
-            if (resp.refreshToken != null) {
-                SecureTokenStore.saveTokens(resp.token, resp.refreshToken)
-            } else {
-                SecureTokenStore.saveToken(resp.token)
+            val resp = withContext(Dispatchers.IO) {
+                api.register(com.storystream.reader_app.network.AuthRequest(email, password))
             }
+            // save tokens via TokenProvider so the in-memory cache updates
+            tokenProvider.updateTokens(resp.token, resp.refreshToken)
             // decode minimal claims (email/tier) client-side
             val session = UserSession.login(email, resp.token)
             AuthStateHolder.updateState(AuthState(
@@ -65,12 +70,10 @@ class AuthRepository {
 
     suspend fun login(email: String, password: String): Result<Unit> {
         return try {
-            val resp = api.login(com.storystream.reader_app.network.AuthRequest(email, password))
-            if (resp.refreshToken != null) {
-                SecureTokenStore.saveTokens(resp.token, resp.refreshToken)
-            } else {
-                SecureTokenStore.saveToken(resp.token)
+            val resp = withContext(Dispatchers.IO) {
+                api.login(com.storystream.reader_app.network.AuthRequest(email, password))
             }
+            tokenProvider.updateTokens(resp.token, resp.refreshToken)
             val session = UserSession.login(email, resp.token)
             AuthStateHolder.updateState(AuthState(
                 isAuthenticated = true,
@@ -86,10 +89,10 @@ class AuthRepository {
 
     suspend fun upgradeUser(): Result<Unit> {
         return try {
-            val resp = api.upgradeUser()
+            val resp = withContext(Dispatchers.IO) { api.upgradeUser() }
             // replace stored token with new premium token
-            SecureTokenStore.clearTokens()
-            SecureTokenStore.saveToken(resp.token)
+            tokenProvider.updateToken(null)
+            tokenProvider.updateToken(resp.token)
             val session = UserSession.restoreFromToken(resp.token)
             AuthStateHolder.updateState(AuthState(
                 isAuthenticated = true,
@@ -104,7 +107,7 @@ class AuthRepository {
     }
 
     fun logout() {
-        SecureTokenStore.clearToken()
+        tokenProvider.updateToken(null)
         AuthStateHolder.updateState(AuthState())
     }
 }

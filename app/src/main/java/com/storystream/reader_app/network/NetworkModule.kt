@@ -14,7 +14,7 @@ object NetworkModule {
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(TokenInterceptor())
-            .authenticator(TokenAuthenticator())
+            // Legacy module: do not attach authenticator here; DI provides a proper client
             .addInterceptor(logging)
             .build()
     }

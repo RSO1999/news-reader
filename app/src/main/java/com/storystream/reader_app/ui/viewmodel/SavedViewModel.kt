@@ -10,8 +10,11 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class SavedViewModel(private val repo: ArticlesRepository = ArticlesRepository()) : ViewModel() {
+@HiltViewModel
+class SavedViewModel @Inject constructor(private val repo: ArticlesRepository) : ViewModel() {
     var saved by mutableStateOf<List<ArticleResponse>>(emptyList())
         private set
     var loading by mutableStateOf(false)
@@ -43,5 +46,14 @@ class SavedViewModel(private val repo: ArticlesRepository = ArticlesRepository()
             }
         }
     }
-}
 
+    fun saveArticle(id: String) {
+        viewModelScope.launch {
+            val res = repo.saveArticle(id)
+            if (res.isSuccess) {
+                // Trigger refresh; repository handles networking errors
+                SavedRefreshManager.triggerRefresh()
+            }
+        }
+    }
+}

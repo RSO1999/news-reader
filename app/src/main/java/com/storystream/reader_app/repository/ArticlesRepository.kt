@@ -4,12 +4,14 @@ import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.data.ContextResponse
 import com.storystream.reader_app.data.ReadingInsightsResponse
 import com.storystream.reader_app.network.ArticlesApi
-import com.storystream.reader_app.network.NetworkModule
 import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ArticlesRepository {
-    private val api: ArticlesApi = NetworkModule.retrofit.create(ArticlesApi::class.java)
-
+@Singleton
+class ArticlesRepository @Inject constructor(
+    private val api: ArticlesApi
+) {
     suspend fun getArticles(page: Int, size: Int, personalized: Boolean): Result<Pair<List<ArticleResponse>, Int>> {
         return try {
             val resp = api.getArticles(page = page, size = size, personalized = personalized)

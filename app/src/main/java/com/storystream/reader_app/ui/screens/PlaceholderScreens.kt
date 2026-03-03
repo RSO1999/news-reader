@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.storystream.reader_app.data.ArticleResponse
-import com.storystream.reader_app.repository.ArticlesRepository
 import com.storystream.reader_app.ui.components.AnimatedListItem
 import com.storystream.reader_app.ui.components.ArticleCard
 import com.storystream.reader_app.ui.theme.AppTheme
@@ -36,13 +35,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? = null) {
     // use provided SavedViewModel or create one
-    val vm: SavedViewModel = vmParam ?: androidx.compose.runtime.remember { SavedViewModel() }
+    val vm: SavedViewModel = vmParam ?: androidx.lifecycle.viewmodel.compose.viewModel()
     val saved = vm.saved
     val loading = vm.loading
     val error = vm.error
 
     val scope = rememberCoroutineScope()
-    val repo = androidx.compose.runtime.remember { ArticlesRepository() }
+    // repository is provided via ViewModel; avoid creating it here
 
     AppTheme {
         Column(
@@ -123,10 +122,7 @@ fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? =
                                     onClick = { onOpenArticle(article.id) },
                                     onSave = { id ->
                                         scope.launch {
-                                            val res = repo.saveArticle(id)
-                                            if (res.isSuccess) {
-                                                vm.refresh()
-                                            }
+                                            vm.saveArticle(id)
                                         }
                                     }
                                 )
@@ -138,4 +134,3 @@ fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? =
         }
     }
 }
-

@@ -3,49 +3,97 @@ package com.storystream.reader_app.network
 import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
+import com.storystream.reader_app.data.TokenProvider
+import com.storystream.reader_app.util.JwtUtils
+import kotlin.jvm.Synchronized
 
-class TokenAuthenticator : Authenticator {
+/**
+ * Authenticator that performs a single-flight token refresh using the refresh token.
+ * It uses an injected RefreshApi (Retrofit) backed by a dedicated client without auth
+ * interceptor to avoid recursion. Concurrent 401s are deduplicated via a simple monitor.
+ */
+class TokenAuthenticator(
+    private val tokenProvider: TokenProvider,
+    private val refreshApi: RefreshApi
+) : Authenticator {
+
+    private val lock = Any()
+    private var isRefreshing = false
+
     @Synchronized
     override fun authenticate(route: okhttp3.Route?, response: Response): Request? {
+        // Prevent retry loops
         if (responseCount(response) >= 2) return null
 
         val path = response.request.url.encodedPath
         if (path.startsWith("/api/auth/")) return null
 
-        val refreshToken = com.storystream.reader_app.data.SecureTokenStore.getRefreshToken() ?: return null
-
-        val currentToken = com.storystream.reader_app.data.SecureTokenStore.getAccessToken()
+        // If another thread already refreshed, retry with latest token
+        val currentToken = tokenProvider.getToken()
         val requestToken = response.request.header("Authorization")?.removePrefix("Bearer ")
-        if (!currentToken.isNullOrBlank() && requestToken != null && currentToken != requestToken &&
-            !com.storystream.reader_app.util.JwtUtils.isExpired(currentToken)
-        ) {
+        if (!currentToken.isNullOrBlank() && requestToken != null && currentToken != requestToken && !JwtUtils.isExpired(currentToken)) {
             return response.request.newBuilder()
                 .header("Authorization", "Bearer $currentToken")
                 .build()
         }
 
-        return try {
-            val refreshCall = NetworkModule.authApi.refresh(RefreshRequest(refreshToken))
-            val refreshResp = refreshCall.execute()
-            if (!refreshResp.isSuccessful) {
-                com.storystream.reader_app.data.SecureTokenStore.clearTokens()
+        synchronized(lock) {
+            if (isRefreshing) {
+                while (isRefreshing) {
+                    try {
+                        (lock as java.lang.Object).wait()
+                    } catch (_: InterruptedException) {
+                        // ignore
+                    }
+                }
+                val tokenNow = tokenProvider.getToken()
+                return if (!tokenNow.isNullOrBlank()) {
+                    response.request.newBuilder().header("Authorization", "Bearer $tokenNow").build()
+                } else {
+                    null
+                }
+            } else {
+                isRefreshing = true
+            }
+        }
+
+        try {
+            val refreshToken = tokenProvider.getRefreshToken() ?: return null
+
+            val call = refreshApi.refresh(com.storystream.reader_app.network.RefreshRequest(refreshToken))
+            val resp = call.execute()
+            if (!resp.isSuccessful) {
+                tokenProvider.updateToken(null)
                 return null
             }
-            val body = refreshResp.body() ?: return null
-            val newAccess = body.token
-            if (newAccess.isBlank()) return null
 
-            if (body.refreshToken != null) {
-                com.storystream.reader_app.data.SecureTokenStore.saveTokens(newAccess, body.refreshToken)
-            } else {
-                com.storystream.reader_app.data.SecureTokenStore.replaceToken(newAccess)
+            val body = resp.body() ?: run {
+                tokenProvider.updateToken(null)
+                return null
             }
 
-            response.request.newBuilder()
-                .header("Authorization", "Bearer $newAccess")
+            val newAccess = body.token
+            val newRefresh = body.refreshToken
+
+            if (newAccess.isNullOrBlank()) {
+                tokenProvider.updateToken(null)
+                return null
+            }
+
+            tokenProvider.updateTokens(newAccess, newRefresh)
+
+            val finalToken = tokenProvider.getToken() ?: return null
+            return response.request.newBuilder()
+                .header("Authorization", "Bearer $finalToken")
                 .build()
-        } catch (_: Exception) {
-            null
+        } catch (e: Exception) {
+            tokenProvider.updateToken(null)
+            return null
+        } finally {
+            synchronized(lock) {
+                isRefreshing = false
+                (lock as java.lang.Object).notifyAll()
+            }
         }
     }
 

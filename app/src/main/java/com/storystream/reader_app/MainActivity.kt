@@ -19,9 +19,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.ui.graphics.PathFillType
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -32,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +40,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.storystream.reader_app.ui.theme.AppTheme
 import com.storystream.reader_app.ui.theme.LocalAppColors
+import dagger.hilt.android.AndroidEntryPoint
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 // Import the screens we created
 import com.storystream.reader_app.ui.screens.HomeFeedScreen
@@ -145,6 +143,7 @@ fun BottomTabBar(selectedTab: String, onSelect: (String) -> Unit) {
     }
 }
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -181,9 +180,9 @@ class MainActivity : ComponentActivity() {
                         val currentArticleId = rememberSaveable { mutableStateOf<String?>(null) }
 
                         // create VMs at host level
-                        val trendingVm = remember { TrendingViewModel() }
-                        val insightsVm = remember { InsightsViewModel() }
-                        val articleDetailVm = remember { ArticleDetailViewModel() }
+                        val trendingVm: TrendingViewModel = viewModel()
+                        val insightsVm: InsightsViewModel = viewModel()
+                        val articleDetailVm: ArticleDetailViewModel = viewModel()
 
                         Column(modifier = Modifier.padding(innerPadding)) {
                             Box(modifier = Modifier.weight(1f)) {
@@ -192,7 +191,7 @@ class MainActivity : ComponentActivity() {
                                     ArticleDetailScreen(articleId = articleId, onBack = { currentArticleId.value = null }, viewModel = articleDetailVm, userTier = authState.tier)
                                 } else {
                                     when (currentTab.value) {
-                                        "Home" -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId.value = id })
+                                        "Home" -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId.value = id }, viewModel = viewModel())
                                         "Trending" -> TrendingScreen(onOpenArticle = { id: String -> currentArticleId.value = id }, viewModel = trendingVm)
                                         "Saved" -> SavedScreen(onOpenArticle = { id: String -> currentArticleId.value = id })
                                         "Insights" -> InsightsScreen(
@@ -201,7 +200,7 @@ class MainActivity : ComponentActivity() {
                                             userEmail = authState.email,
                                             userTier = authState.tier
                                         )
-                                        else -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId.value = id })
+                                        else -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId.value = id }, viewModel = viewModel())
                                     }
                                 }
                             }
