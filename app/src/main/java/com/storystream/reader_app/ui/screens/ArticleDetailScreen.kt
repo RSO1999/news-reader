@@ -1,5 +1,6 @@
 package com.storystream.reader_app.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -31,22 +32,40 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import com.storystream.reader_app.ui.viewmodel.ArticleDetailViewModel
 import com.storystream.reader_app.repository.AuthStateHolder
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import coil.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
-fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAuth: () -> Unit = {}, viewModel: ArticleDetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(), userTier: String = "FREE") {
-    val article by remember { derivedStateOf { viewModel.article } }
-    val contextEntities by remember { derivedStateOf { viewModel.contextEntities } }
-    val loading by remember { derivedStateOf { viewModel.loading } }
-    val error by remember { derivedStateOf { viewModel.error } }
-    val gated by remember { derivedStateOf { viewModel.gated } }
-    val contextLoading by remember { derivedStateOf { viewModel.contextLoading } }
-    val contextLocked by remember { derivedStateOf { viewModel.contextLocked } }
-    val isSaved by remember { derivedStateOf { viewModel.isSaved } }
+fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAuth: () -> Unit = {}, viewModel: ArticleDetailViewModel = viewModel(), userTier: String = "FREE") {
+    // Collect lifecycle-aware ui state from the ViewModel
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val article = uiState.article
+    val contextEntities = uiState.contextEntities
+    val loading = uiState.loading
+    val error = uiState.error
+    val gated = uiState.gated
+    val contextLoading = uiState.contextLoading
+    val contextLocked = uiState.contextLocked
+    val isSaved = uiState.isSaved
+
+    val context = LocalContext.current
+
+    // Collect one-shot events and show simple toast feedback
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { ev ->
+            when (ev) {
+                is com.storystream.reader_app.ui.viewmodel.ArticleDetailEvent.SaveOk -> Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+                is com.storystream.reader_app.ui.viewmodel.ArticleDetailEvent.SaveFailed -> Toast.makeText(context, "Save failed", Toast.LENGTH_SHORT).show()
+                is com.storystream.reader_app.ui.viewmodel.ArticleDetailEvent.UpgradeSuccess -> Toast.makeText(context, "Upgrade successful", Toast.LENGTH_SHORT).show()
+                is com.storystream.reader_app.ui.viewmodel.ArticleDetailEvent.UpgradeFailed -> Toast.makeText(context, "Upgrade failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // Fetch article on load
     LaunchedEffect(articleId) {
@@ -107,7 +126,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = error!!,
+                            text = error ?: "",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -212,7 +231,6 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
                             lineHeight = 26.sp
                         )
 
-                        // Placeholder paragraphs
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "This article continues with additional reporting and analysis. Full article content is available at the source.",
