@@ -1,17 +1,16 @@
 package com.storystream.reader_app.ui.viewmodel
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
 import com.storystream.reader_app.data.SavedRefreshManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class HomeFeedViewModel(private val repo: ArticlesRepository = ArticlesRepository()) {
+class HomeFeedViewModel(private val repo: ArticlesRepository = ArticlesRepository()) : ViewModel() {
     var articles by mutableStateOf<List<ArticleResponse>>(emptyList())
         private set
     var loading by mutableStateOf(false)
@@ -29,8 +28,6 @@ class HomeFeedViewModel(private val repo: ArticlesRepository = ArticlesRepositor
     var lastSaveStatus by mutableStateOf<String?>(null)
         private set
 
-    private val scope = CoroutineScope(Job() + Dispatchers.Main)
-
     fun loadFirstPage(personalizedFlag: Boolean = false) {
         personalized = personalizedFlag
         page = 0
@@ -44,7 +41,7 @@ class HomeFeedViewModel(private val repo: ArticlesRepository = ArticlesRepositor
 
         loading = true
         error = null
-        scope.launch {
+        viewModelScope.launch {
             val res = repo.getArticles(page, 20, personalized)
             loading = false
             if (res.isSuccess) {
@@ -68,7 +65,7 @@ class HomeFeedViewModel(private val repo: ArticlesRepository = ArticlesRepositor
 
     fun saveArticle(id: String) {
         // optimistic UI handled by caller (ArticleCard) via onSave; backend call here
-        scope.launch {
+        viewModelScope.launch {
             val res = repo.saveArticle(id)
             if (res.isSuccess) {
                 lastSaveStatus = "ok"

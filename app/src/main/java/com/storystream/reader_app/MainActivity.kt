@@ -17,18 +17,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.storystream.reader_app.ui.theme.AppTheme
-
-// Added minimal state imports for simple in-app navigation
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-
-// unit import needed
 import androidx.compose.ui.unit.dp
+import com.storystream.reader_app.ui.theme.AppTheme
 
 // Import the screens we created
 import com.storystream.reader_app.ui.screens.HomeFeedScreen
@@ -40,12 +37,13 @@ import com.storystream.reader_app.ui.screens.CreateAccountScreen
 import com.storystream.reader_app.ui.screens.TrendingScreen
 
 // User session
-import com.storystream.reader_app.data.UserSession
 import com.storystream.reader_app.data.SecureTokenStore
 
 // Trending VM
 import com.storystream.reader_app.ui.viewmodel.TrendingViewModel
-import androidx.compose.runtime.remember
+import com.storystream.reader_app.ui.viewmodel.InsightsViewModel
+import com.storystream.reader_app.ui.viewmodel.ArticleDetailViewModel
+import com.storystream.reader_app.repository.AuthStateHolder
 
 // Minimal bottom bar component (simple Row of tappable labels)
 @Composable
@@ -78,71 +76,65 @@ class MainActivity : ComponentActivity() {
         // Initialize Tink-backed secure token store
         try {
             SecureTokenStore.init(this)
-            // if token exists, restore user session
-            val token = SecureTokenStore.getToken()
-            if (token != null) {
-                UserSession.restoreFromToken(token)
-            }
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
 
         setContent {
             AppTheme {
-                // Simple in-memory auth flow for UI prototype
-                var isAuthenticated by rememberSaveable { mutableStateOf(SecureTokenStore.getToken() != null) }
-                var authMode by rememberSaveable { mutableStateOf("login") } // "login" or "create"
+                val authState by AuthStateHolder.authState.collectAsState()
 
-                if (!isAuthenticated) {
+                if (!authState.isAuthenticated) {
                     // Show auth screens
-                    if (authMode == "login") {
+                    val authMode = rememberSaveable { mutableStateOf("login") } // "login" or "create"
+
+                    if (authMode.value == "login") {
                         LoginScreen(onLogin = { _, _ ->
-                            // minimal simulated success
-                            isAuthenticated = true
-                        }, onCreateAccount = { authMode = "create" }, modifier = Modifier.fillMaxSize())
+                            // AuthRepository handles state update
+                        }, onCreateAccount = { authMode.value = "create" }, modifier = Modifier.fillMaxSize())
                     } else {
                         CreateAccountScreen(modifier = Modifier.fillMaxSize(), onCreate = { _, _ ->
-                            // simulated account creation success
-                            isAuthenticated = true
-                        }, onBack = { authMode = "login" })
+                            // AuthRepository handles state update
+                        }, onBack = { authMode.value = "login" })
                     }
 
                 } else {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         // state: current tab and optional selected article id
-                        var currentTab by rememberSaveable { mutableStateOf("Home") }
-                        var currentArticleId by rememberSaveable { mutableStateOf<String?>(null) }
+                        val currentTab = rememberSaveable { mutableStateOf("Home") }
+                        val currentArticleId = rememberSaveable { mutableStateOf<String?>(null) }
 
                         // create VMs at host level
                         val trendingVm = remember { TrendingViewModel() }
+                        val insightsVm = remember { InsightsViewModel() }
+                        val articleDetailVm = remember { ArticleDetailViewModel() }
 
                         Column(modifier = Modifier.padding(innerPadding)) {
                             Box(modifier = Modifier.weight(1f)) {
-                                if (currentArticleId != null) {
-                                    ArticleDetailScreen(articleId = currentArticleId!!, onBack = { currentArticleId = null })
+                                val articleId = currentArticleId.value
+                                if (articleId != null) {
+                                    ArticleDetailScreen(articleId = articleId, onBack = { currentArticleId.value = null }, viewModel = articleDetailVm, userTier = authState.tier)
                                 } else {
-                                    when (currentTab) {
-                                        "Home" -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId = id })
-                                        "Trending" -> TrendingScreen(onOpenArticle = { id: String -> currentArticleId = id }, viewModel = trendingVm)
-                                        "Saved" -> SavedScreen(onOpenArticle = { id: String -> currentArticleId = id })
+                                    when (currentTab.value) {
+                                        "Home" -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId.value = id })
+                                        "Trending" -> TrendingScreen(onOpenArticle = { id: String -> currentArticleId.value = id }, viewModel = trendingVm)
+                                        "Saved" -> SavedScreen(onOpenArticle = { id: String -> currentArticleId.value = id })
                                         "Insights" -> InsightsScreen(
-                                            onUpgrade = { UserSession.setPremium() },
-                                            onLogout = {
-                                                // clear auth state and return to login
-                                                isAuthenticated = false
-                                            },
-                                            onOpenArticle = { id: String -> currentArticleId = id }
+                                            onOpenArticle = { id: String -> currentArticleId.value = id },
+                                            viewModel = insightsVm,
+                                            userEmail = authState.email,
+                                            userTier = authState.tier
                                         )
-                                        else -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId = id })
+                                        else -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId.value = id })
                                     }
                                 }
                             }
 
-                            // Minimal bottom tab bar (keeps UI simple & dependency-free)
+                            // Minimal bottom bar (keeps UI simple & dependency-free)
                             Spacer(modifier = Modifier.height(8.dp))
-                            BottomTabBar(selectedTab = currentTab, onSelect = { tab ->
-                                currentArticleId = null
-                                currentTab = tab
+                            BottomTabBar(selectedTab = currentTab.value, onSelect = { tab ->
+                                currentArticleId.value = null
+                                currentTab.value = tab
                             })
                         }
                     }

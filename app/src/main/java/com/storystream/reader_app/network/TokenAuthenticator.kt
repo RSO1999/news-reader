@@ -14,8 +14,7 @@ class TokenAuthenticator : Authenticator {
 
         val refreshToken = com.storystream.reader_app.data.SecureTokenStore.getRefreshToken() ?: return null
 
-        val currentToken = com.storystream.reader_app.data.UserSession.token
-            ?: com.storystream.reader_app.data.SecureTokenStore.getAccessToken()
+        val currentToken = com.storystream.reader_app.data.SecureTokenStore.getAccessToken()
         val requestToken = response.request.header("Authorization")?.removePrefix("Bearer ")
         if (!currentToken.isNullOrBlank() && requestToken != null && currentToken != requestToken &&
             !com.storystream.reader_app.util.JwtUtils.isExpired(currentToken)
@@ -30,7 +29,6 @@ class TokenAuthenticator : Authenticator {
             val refreshResp = refreshCall.execute()
             if (!refreshResp.isSuccessful) {
                 com.storystream.reader_app.data.SecureTokenStore.clearTokens()
-                com.storystream.reader_app.data.UserSession.logout()
                 return null
             }
             val body = refreshResp.body() ?: return null
@@ -42,7 +40,6 @@ class TokenAuthenticator : Authenticator {
             } else {
                 com.storystream.reader_app.data.SecureTokenStore.replaceToken(newAccess)
             }
-            com.storystream.reader_app.data.UserSession.restoreFromToken(newAccess)
 
             response.request.newBuilder()
                 .header("Authorization", "Bearer $newAccess")

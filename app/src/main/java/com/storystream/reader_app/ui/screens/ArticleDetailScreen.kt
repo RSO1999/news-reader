@@ -15,57 +15,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.storystream.reader_app.ui.theme.AppTheme
 import com.storystream.reader_app.ui.components.Masthead
-import com.storystream.reader_app.data.UserSession
-import com.storystream.reader_app.repository.ArticlesRepository
-import com.storystream.reader_app.data.ContextEntity
 import com.storystream.reader_app.ui.components.ContextEntityCard
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import com.storystream.reader_app.data.SavedRefreshManager
+import com.storystream.reader_app.ui.viewmodel.ArticleDetailViewModel
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 
 @Composable
-fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAuth: () -> Unit = {}) {
-    val repo = remember { ArticlesRepository() }
-
-    var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var gated by remember { mutableStateOf(false) }
-    var article by remember { mutableStateOf<com.storystream.reader_app.data.ArticleResponse?>(null) }
-    var contextLoading by remember { mutableStateOf(false) }
-    var contextEntities by remember { mutableStateOf<List<ContextEntity>>(emptyList()) }
-    var contextLocked by remember { mutableStateOf(false) }
-    var isSaved by remember { mutableStateOf(false) }
+fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAuth: () -> Unit = {}, viewModel: ArticleDetailViewModel = remember { ArticleDetailViewModel() }, userTier: String = "FREE") {
+    val article by remember { derivedStateOf { viewModel.article } }
+    val contextEntities by remember { derivedStateOf { viewModel.contextEntities } }
+    val loading by remember { derivedStateOf { viewModel.loading } }
+    val error by remember { derivedStateOf { viewModel.error } }
+    val gated by remember { derivedStateOf { viewModel.gated } }
+    val contextLoading by remember { derivedStateOf { viewModel.contextLoading } }
+    val contextLocked by remember { derivedStateOf { viewModel.contextLocked } }
+    val isSaved by remember { derivedStateOf { viewModel.isSaved } }
 
     // Fetch article on load
     LaunchedEffect(articleId) {
-        loading = true
-        error = null
-        gated = false
-        val res = repo.getArticle(articleId)
-        loading = false
-        if (res.isSuccess) {
-            val resp = res.getOrNull()!!
-            if (resp.isSuccessful) {
-                article = resp.body()
-                // record view locally
-                // LocalStore.recordView(articleId) // removed; server is source of truth
-            } else {
-                if (resp.code() == 403) {
-                    gated = true
-                } else {
-                    error = "Failed to load article: ${resp.code()}"
-                }
-            }
-        } else {
-            error = res.exceptionOrNull()?.localizedMessage ?: "Failed to load article"
-        }
+        viewModel.loadArticle(articleId)
     }
 
-    val isPremium = UserSession.tier == "PREMIUM"
-    val coroutineScope = rememberCoroutineScope()
+    val isPremium = userTier == "PREMIUM"
 
     AppTheme {
         Column(modifier = Modifier
@@ -77,7 +53,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
             Masthead(title = "Article", showBack = true, onBack = onBack)
 
             if (loading) {
-                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
                 return@Column
@@ -98,7 +74,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(text = error!!)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { /* retry */ }) {
+                    Button(onClick = { viewModel.loadArticle(articleId) }) {
                         Text(text = "Retry")
                     }
                 }
@@ -123,20 +99,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                         IconButton(onClick = {
-                            isSaved = true
-                            coroutineScope.launch {
-                                val res = repo.saveArticle(articleId)
-                                if (res.isSuccess) {
-                                    // notify using coroutine
-                                    try {
-                                        SavedRefreshManager.triggerRefresh()
-                                    } catch (_: Exception) {
-                                    }
-                                    isSaved = true
-                                } else {
-                                    isSaved = false
-                                }
-                            }
+                            viewModel.saveArticle(articleId)
                         }) {
                             Icon(
                                 imageVector = if (isSaved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
@@ -148,6 +111,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+
                     // Context panel — LOAD ON DEMAND for premium users only
                     if (isPremium) {
                         if (contextEntities.isEmpty()) {
@@ -158,27 +122,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, onRequireAut
                             } else {
                                 // Show a button to load context on demand
                                 Button(onClick = {
-                                    contextLocked = false
-                                    coroutineScope.launch {
-                                        contextLoading = true
-                                        val cres = repo.getContext(articleId)
-                                        contextLoading = false
-                                        if (cres.isSuccess) {
-                                            val r = cres.getOrNull()!!
-                                            if (r.isSuccessful) {
-                                                val body = r.body()
-                                                if (body != null) {
-                                                    contextEntities = body.entities
-                                                }
-                                            } else if (r.code() == 403) {
-                                                contextLocked = true
-                                            } else {
-                                                // optional: set error or show toast; keep minimal
-                                            }
-                                        } else {
-                                            // network failure - keep minimal
-                                        }
-                                    }
+                                    viewModel.loadContext(articleId)
                                 }) {
                                     Text(text = "Load AI Context")
                                 }

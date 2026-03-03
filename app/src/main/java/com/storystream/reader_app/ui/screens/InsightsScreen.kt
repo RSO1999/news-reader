@@ -11,58 +11,38 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.storystream.reader_app.data.UserSession
-import com.storystream.reader_app.data.ReadingInsightsResponse
-import com.storystream.reader_app.repository.AuthRepository
-import com.storystream.reader_app.repository.ArticlesRepository
-import kotlinx.coroutines.launch
+import com.storystream.reader_app.ui.viewmodel.InsightsViewModel
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 
 @Composable
 fun InsightsScreen(
     onUpgrade: () -> Unit = {},
     onLogout: () -> Unit = {},
-    onOpenArticle: (String) -> Unit = {}
+    onOpenArticle: (String) -> Unit = {},
+    viewModel: InsightsViewModel = remember { InsightsViewModel() },
+    userEmail: String? = null,
+    userTier: String = "FREE"
 ) {
-    val email = UserSession.email
-    val tier = UserSession.tier
+    val email = userEmail
+    val tier = userTier
 
-    val authRepo = remember { AuthRepository() }
-    val articlesRepo = remember { ArticlesRepository() }
-    val scope = rememberCoroutineScope()
-
-    var insights by remember { mutableStateOf<ReadingInsightsResponse?>(null) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        loading = true
-        error = null
-        val res = articlesRepo.getUserInsights()
-        loading = false
-        if (res.isSuccess) {
-            insights = res.getOrNull()
-        } else {
-            error = res.exceptionOrNull()?.localizedMessage ?: "Failed to load insights"
-        }
-    }
+    val insights by remember { derivedStateOf { viewModel.insights } }
+    val loading by remember { derivedStateOf { viewModel.loading } }
+    val error by remember { derivedStateOf { viewModel.error } }
 
     Column(
         modifier = Modifier
@@ -112,12 +92,7 @@ fun InsightsScreen(
                 if (tier != "PREMIUM") {
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(onClick = {
-                        scope.launch {
-                            val res = authRepo.upgradeUser()
-                            if (res.isSuccess) {
-                                onUpgrade()
-                            }
-                        }
+                        viewModel.upgradeUser(onUpgrade)
                     }, modifier = Modifier.fillMaxWidth()) {
                         Text(text = "Upgrade to Premium")
                     }
@@ -125,8 +100,7 @@ fun InsightsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(onClick = {
-                    authRepo.logout()
-                    onLogout()
+                    viewModel.logout(onLogout)
                 }, modifier = Modifier.fillMaxWidth()) {
                     Text(text = "Log out")
                 }
