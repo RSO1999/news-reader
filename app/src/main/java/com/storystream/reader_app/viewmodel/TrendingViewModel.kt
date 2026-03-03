@@ -22,6 +22,11 @@ data class TrendingUiState(
     val error: String? = null
 )
 
+sealed class TrendingEvent {
+    object SaveOk : TrendingEvent()
+    object SaveFailed : TrendingEvent()
+}
+
 @HiltViewModel
 class TrendingViewModel @Inject constructor(
     private val repo: ArticlesRepository
@@ -30,8 +35,8 @@ class TrendingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TrendingUiState())
     val uiState: StateFlow<TrendingUiState> = _uiState.asStateFlow()
 
-    private val _events = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val events: SharedFlow<String> = _events.asSharedFlow()
+    private val _events = MutableSharedFlow<TrendingEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<TrendingEvent> = _events.asSharedFlow()
 
     fun loadTrending(limit: Int = 10) {
         val current = _uiState.value
@@ -54,9 +59,9 @@ class TrendingViewModel @Inject constructor(
             // notify saved list to refresh
             SavedRefreshManager.triggerRefresh()
             if (res.isSuccess) {
-                _events.emit("save_ok")
+                _events.emit(TrendingEvent.SaveOk)
             } else {
-                _events.emit("save_failed")
+                _events.emit(TrendingEvent.SaveFailed)
             }
         }
     }

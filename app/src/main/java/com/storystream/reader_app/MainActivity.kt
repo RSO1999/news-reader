@@ -188,7 +188,7 @@ class MainActivity : ComponentActivity() {
                             Box(modifier = Modifier.weight(1f)) {
                                 val articleId = currentArticleId.value
                                 if (articleId != null) {
-                                    ArticleDetailScreen(articleId = articleId, onBack = { currentArticleId.value = null }, viewModel = articleDetailVm, userTier = authState.tier)
+                                    ArticleDetailScreen(articleId = articleId, onBack = { currentArticleId.value = null }, viewModel = articleDetailVm)
                                 } else {
                                     when (currentTab.value) {
                                         "Home" -> HomeFeedScreen(onOpenArticle = { id: String -> currentArticleId.value = id }, viewModel = viewModel())

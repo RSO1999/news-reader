@@ -26,14 +26,19 @@ data class HomeFeedUiState(
     val lastSaveStatus: String? = null
 )
 
+sealed class HomeFeedEvent {
+    object SaveOk : HomeFeedEvent()
+    object SaveFailed : HomeFeedEvent()
+}
+
 @HiltViewModel
 class HomeFeedViewModel @Inject constructor(private val repo: ArticlesRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeFeedUiState())
     val uiState: StateFlow<HomeFeedUiState> = _uiState.asStateFlow()
 
-    private val _events = MutableSharedFlow<String>()
-    val events: SharedFlow<String> = _events.asSharedFlow()
+    private val _events = MutableSharedFlow<HomeFeedEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<HomeFeedEvent> = _events.asSharedFlow()
 
     fun loadFirstPage(personalizedFlag: Boolean = false) {
         _uiState.update { it.copy(personalized = personalizedFlag, page = 0, articles = emptyList(), error = null) }
@@ -83,10 +88,10 @@ class HomeFeedViewModel @Inject constructor(private val repo: ArticlesRepository
             if (res.isSuccess) {
                 _uiState.update { it.copy(lastSaveStatus = "ok") }
                 SavedRefreshManager.triggerRefresh()
-                _events.emit("save_ok")
+                _events.emit(HomeFeedEvent.SaveOk)
             } else {
                 _uiState.update { it.copy(lastSaveStatus = "failed") }
-                _events.emit("save_failed")
+                _events.emit(HomeFeedEvent.SaveFailed)
             }
         }
     }

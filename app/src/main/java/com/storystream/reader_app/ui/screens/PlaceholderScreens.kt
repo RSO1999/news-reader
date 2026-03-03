@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,115 +16,135 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.ui.components.AnimatedListItem
 import com.storystream.reader_app.ui.components.ArticleCard
 import com.storystream.reader_app.ui.theme.AppTheme
+import com.storystream.reader_app.ui.viewmodel.SavedEvent
 import com.storystream.reader_app.ui.viewmodel.SavedViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? = null) {
-    // use provided SavedViewModel or create one
     val vm: SavedViewModel = vmParam ?: androidx.lifecycle.viewmodel.compose.viewModel()
-    val saved = vm.saved
-    val loading = vm.loading
-    val error = vm.error
-
+    val uiState = vm.uiState.collectAsStateWithLifecycle().value
+    val saved = uiState.saved
+    val loading = uiState.loading
+    val error = uiState.error
     val scope = rememberCoroutineScope()
-    // repository is provided via ViewModel; avoid creating it here
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(vm.events) {
+        vm.events.collect { ev ->
+            when (ev) {
+                SavedEvent.SaveSucceeded -> snackbarHostState.showSnackbar("Saved")
+                SavedEvent.SaveFailed -> snackbarHostState.showSnackbar("Save failed")
+                SavedEvent.RefreshFailed -> snackbarHostState.showSnackbar("Failed to refresh")
+                SavedEvent.RefreshSucceeded -> Unit
+            }
+        }
+    }
 
     AppTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
+        Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { scaffoldPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(scaffoldPadding)
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
 
-            // Header
-            Text(
-                text = "Your Library",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
-            )
+                // Header
+                Text(
+                    text = "Your Library",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+                )
 
-            when {
-                loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(28.dp),
-                            strokeWidth = 2.5.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                error != null -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error
+                when {
+                    loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 2.5.dp,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Button(onClick = { vm.refresh() }) {
-                                Text(text = "Retry")
+                        }
+                    }
+                    error != null -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = error,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(onClick = { vm.refresh() }) {
+                                    Text(text = "Retry")
+                                }
                             }
                         }
                     }
-                }
-                saved.isEmpty() -> {
-                    // Empty state with icon and message
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Outlined.FavoriteBorder,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "No saved articles yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "Articles you save will appear here\nfor easy access later.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                textAlign = TextAlign.Center
-                            )
+                    saved.isEmpty() -> {
+                        // Empty state with icon and message
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FavoriteBorder,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "No saved articles yet",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Articles you save will appear here\nfor easy access later.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 80.dp)
-                    ) {
-                        itemsIndexed(items = saved) { index, article: ArticleResponse ->
-                            AnimatedListItem(index = index) {
-                                ArticleCard(
-                                    article = article,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                                    onClick = { onOpenArticle(article.id) },
-                                    onSave = { id ->
-                                        scope.launch {
-                                            vm.saveArticle(id)
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 80.dp)
+                        ) {
+                            itemsIndexed(items = saved) { index, article: ArticleResponse ->
+                                AnimatedListItem(index = index) {
+                                    ArticleCard(
+                                        article = article,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                        onClick = { onOpenArticle(article.id) },
+                                        onSave = { id ->
+                                            scope.launch {
+                                                vm.saveArticle(id)
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }

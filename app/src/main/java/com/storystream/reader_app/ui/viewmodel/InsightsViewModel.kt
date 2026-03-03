@@ -23,6 +23,11 @@ data class InsightsUiState(
     val error: String? = null
 )
 
+sealed class InsightsEvent {
+    object UpgradeSuccess : InsightsEvent()
+    object UpgradeFailed : InsightsEvent()
+}
+
 @HiltViewModel
 class InsightsViewModel @Inject constructor(
     private val articlesRepo: ArticlesRepository,
@@ -32,8 +37,8 @@ class InsightsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(InsightsUiState())
     val uiState: StateFlow<InsightsUiState> = _uiState.asStateFlow()
 
-    private val _events = MutableSharedFlow<String>()
-    val events: SharedFlow<String> = _events.asSharedFlow()
+    private val _events = MutableSharedFlow<InsightsEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<InsightsEvent> = _events.asSharedFlow()
 
     fun loadInsights() {
         _uiState.update { it.copy(loading = true, error = null) }
@@ -53,9 +58,9 @@ class InsightsViewModel @Inject constructor(
             if (res.isSuccess) {
                 // Reload insights from server to get updated premium state
                 loadInsights()
-                _events.emit("upgrade_success")
+                _events.emit(InsightsEvent.UpgradeSuccess)
             } else {
-                _events.emit("upgrade_failed")
+                _events.emit(InsightsEvent.UpgradeFailed)
             }
         }
     }
