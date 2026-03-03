@@ -70,3 +70,4 @@ fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? =
         }
     }
 }
+
