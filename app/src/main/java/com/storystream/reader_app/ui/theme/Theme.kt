@@ -1,30 +1,57 @@
 package com.storystream.reader_app.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
 import androidx.compose.material3.Surface
 
-// Color tokens from style guide
+// ---- Extended color tokens accessible via LocalAppColors ----
+data class AppColors(
+    val sectionBadge: Color,
+    val save: Color,
+    val tabActive: Color,
+    val tabInactive: Color,
+    val premium: Color,
+    val premiumForeground: Color,
+    val surfaceElevated: Color
+)
+
+val LightAppColors = AppColors(
+    sectionBadge = PrimaryLight,
+    save = TertiaryLight,
+    tabActive = PrimaryLight,
+    tabInactive = OnSurfaceVariantLight,
+    premium = PremiumColor,
+    premiumForeground = PremiumForeground,
+    surfaceElevated = SurfaceElevatedLight
+)
+
+val DarkAppColors = AppColors(
+    sectionBadge = PrimaryDark,
+    save = TertiaryDark,
+    tabActive = PrimaryDark,
+    tabInactive = OnSurfaceVariantDark,
+    premium = PremiumColor,
+    premiumForeground = PremiumForeground,
+    surfaceElevated = SurfaceElevatedDark
+)
+
+val LocalAppColors = staticCompositionLocalOf { LightAppColors }
+
+// ---- Material Color Schemes ----
 private val LightColors: ColorScheme = lightColorScheme(
     primary = PrimaryLight,
     onPrimary = OnPrimaryLight,
     secondary = SecondaryLight,
-    onSecondary = OnPrimaryLight, // assuming white
+    onSecondary = OnPrimaryLight,
     tertiary = TertiaryLight,
     onTertiary = OnPrimaryLight,
     background = BackgroundLight,
@@ -34,7 +61,7 @@ private val LightColors: ColorScheme = lightColorScheme(
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = OnSurfaceVariantLight,
     outline = OutlineLight,
-    error = Color.Red, // placeholder
+    error = Color(0xFFD32F2F),
     onError = Color.White
 )
 
@@ -52,41 +79,11 @@ private val DarkColors: ColorScheme = darkColorScheme(
     surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = OnSurfaceVariantDark,
     outline = OutlineDark,
-    error = Color.Red,
+    error = Color(0xFFEF5350),
     onError = Color.White
 )
 
-// Typography tokens — Serif for headlines, Sans for body
-private val AppTypography = Typography(
-    displayLarge = androidx.compose.ui.text.TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 28.sp
-    ),
-    titleLarge = androidx.compose.ui.text.TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp
-    ),
-    bodyLarge = androidx.compose.ui.text.TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 22.sp
-    ),
-    bodyMedium = androidx.compose.ui.text.TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp
-    ),
-    labelSmall = androidx.compose.ui.text.TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-    )
-)
-
+// ---- Shapes ----
 private val AppShapes = Shapes(
     small = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
     medium = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
@@ -96,26 +93,19 @@ private val AppShapes = Shapes(
 @Composable
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val colorScheme = if (darkTheme) DarkColors else LightColors
+    val appColors = if (darkTheme) DarkAppColors else LightAppColors
 
-        darkTheme -> DarkColors
-        else -> LightColors
+    CompositionLocalProvider(LocalAppColors provides appColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = AppShapes,
+            content = content
+        )
     }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        shapes = AppShapes,
-        content = content
-    )
 }
 
 // Minimal helper composable for usage in previews or sample screens

@@ -34,7 +34,6 @@ object SecureTokenStore {
 
             val keysetHandle: KeysetHandle = manager.keysetHandle
 
-            @Suppress("DEPRECATION")
             aead = keysetHandle.getPrimitive(Aead::class.java)
             prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         } catch (e: Exception) {

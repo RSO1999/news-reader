@@ -40,11 +40,12 @@ class InsightsViewModel(
         }
     }
 
-    fun upgradeUser(onSuccess: () -> Unit) {
+    fun upgradeUser() {
         viewModelScope.launch {
             val res = authRepo.upgradeUser()
             if (res.isSuccess) {
-                onSuccess()
+                // Reload insights from server to get updated premium state
+                loadInsights()
             }
         }
     }

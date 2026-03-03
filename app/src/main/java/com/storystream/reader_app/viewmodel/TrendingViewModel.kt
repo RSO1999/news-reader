@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.repository.ArticlesRepository
-import com.storystream.reader_app.data.SavedRefreshManager
 import kotlinx.coroutines.launch
 
 class TrendingViewModel(private val repo: ArticlesRepository = ArticlesRepository()) : ViewModel() {

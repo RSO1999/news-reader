@@ -12,8 +12,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -22,10 +34,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.storystream.reader_app.ui.theme.AppTheme
+import com.storystream.reader_app.ui.theme.LocalAppColors
 
 // Import the screens we created
 import com.storystream.reader_app.ui.screens.HomeFeedScreen
@@ -45,26 +63,84 @@ import com.storystream.reader_app.ui.viewmodel.InsightsViewModel
 import com.storystream.reader_app.ui.viewmodel.ArticleDetailViewModel
 import com.storystream.reader_app.repository.AuthStateHolder
 
-// Minimal bottom bar component (simple Row of tappable labels)
+// Custom trending-up line graph icon (no extended icons dependency needed)
+private val TrendingUpIcon: ImageVector by lazy {
+    ImageVector.Builder(
+        name = "TrendingUp",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).apply {
+        addPath(
+            pathData = androidx.compose.ui.graphics.vector.PathParser().parsePathString(
+                "M16,6l2.29,2.29l-4.88,4.88l-4,-4L2,16.59L3.41,18l6,-6l4,4l6.3,-6.29L22,12V6z"
+            ).toNodes(),
+            fill = SolidColor(androidx.compose.ui.graphics.Color.Black)
+        )
+    }.build()
+}
+
+// Styled bottom tab bar with icons and active/inactive states
 @Composable
 fun BottomTabBar(selectedTab: String, onSelect: (String) -> Unit) {
-    Row(
+    val appColors = LocalAppColors.current
+    val borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+
+    data class TabItem(val label: String, val activeIcon: ImageVector, val inactiveIcon: ImageVector)
+
+    val tabs = listOf(
+        TabItem("Home", Icons.Filled.Star, Icons.Filled.Star),
+        TabItem("Trending", TrendingUpIcon, TrendingUpIcon),
+        TabItem("Saved", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
+        TabItem("Insights", Icons.Filled.Person, Icons.Filled.Person)
+    )
+
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
+            .drawBehind {
+                drawLine(
+                    color = borderColor,
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
     ) {
-        val tabs = listOf("Home", "Trending", "Saved", "Insights")
-        for (t in tabs) {
-            val isSelected = t == selectedTab
-            Text(
-                text = t,
-                modifier = Modifier
-                    .clickable { onSelect(t) }
-                    .padding(8.dp),
-                style = if (isSelected) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            for (tab in tabs) {
+                val isSelected = tab.label == selectedTab
+                val tint = if (isSelected) appColors.tabActive else appColors.tabInactive
+
+                Column(
+                    modifier = Modifier
+                        .clickable { onSelect(tab.label) }
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = if (isSelected) tab.activeIcon else tab.inactiveIcon,
+                        contentDescription = tab.label,
+                        tint = tint,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = tab.label,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        ),
+                        color = tint
+                    )
+                }
+            }
         }
     }
 }
@@ -130,8 +206,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            // Minimal bottom bar (keeps UI simple & dependency-free)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            // Bottom tab bar
                             BottomTabBar(selectedTab = currentTab.value, onSelect = { tab ->
                                 currentArticleId.value = null
                                 currentTab.value = tab

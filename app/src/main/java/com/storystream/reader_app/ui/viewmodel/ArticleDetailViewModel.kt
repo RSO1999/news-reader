@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.storystream.reader_app.data.ArticleResponse
 import com.storystream.reader_app.data.ContextEntity
 import com.storystream.reader_app.repository.ArticlesRepository
+import com.storystream.reader_app.repository.AuthRepository
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,7 +13,8 @@ import androidx.compose.runtime.setValue
 import com.storystream.reader_app.data.SavedRefreshManager
 
 class ArticleDetailViewModel(
-    private val repo: ArticlesRepository = ArticlesRepository()
+    private val repo: ArticlesRepository = ArticlesRepository(),
+    private val authRepo: AuthRepository = AuthRepository()
 ) : ViewModel() {
 
     var article by mutableStateOf<ArticleResponse?>(null)
@@ -37,6 +39,13 @@ class ArticleDetailViewModel(
             loading = true
             error = null
             gated = false
+            // Reset all per-article state so stale data from previous article is cleared
+            contextEntities = emptyList()
+            contextLoading = false
+            contextLocked = false
+            isSaved = false
+            article = null
+
             val res = repo.getArticle(articleId)
             loading = false
             if (res.isSuccess) {
@@ -88,6 +97,16 @@ class ArticleDetailViewModel(
                 SavedRefreshManager.triggerRefresh() // Trigger a refresh after saving
             } else {
                 isSaved = false
+            }
+        }
+    }
+
+    fun upgradeUser(articleId: String) {
+        viewModelScope.launch {
+            val res = authRepo.upgradeUser()
+            if (res.isSuccess) {
+                // Reload article to unlock gated content
+                loadArticle(articleId)
             }
         }
     }
