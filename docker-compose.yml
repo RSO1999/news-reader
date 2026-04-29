@@ -1,0 +1,37 @@
+name: storystream-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: storystream-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: storystream
+    ports:
+      - "5432:5432"
+    volumes:
+      - storystream_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d storystream"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: storystream-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@storystream.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  storystream_data:
+    name: storystream_pg_data

@@ -1,0 +1,248 @@
+I’ll generate concise curl examples, the exact JSON shapes each endpoint returns, and map each shape to the UI component/screen that should consume it.
+
+Checklist
+- List each user-facing endpoint (no debug) — done
+- Provide one representative curl per endpoint — done
+- Provide the returned JSON shape (example + field types/notes) — done
+- Map each shape to a UI component/screen and describe which fields power which UI elements — done
+
+Notes: use BASE=http://localhost:8080, TOKEN for JWT, and ARTICLE_ID for article UUID in the curl examples.
+
+1) Register
+curl:
+```
+curl -sS -X POST $BASE/api/auth/register -H "Content-Type: application/json" -d '{"email":"ry@mail.com","password":"test"}'
+```
+Returned JSON shape (example):
+{
+  "token": "eyJhbGciOi..."
+}
+Fields:
+- token: string (JWT)
+
+UI mapping — Auth / Register screen:
+- store `token` in secure storage
+- on success: navigate to Home Feed and enable auth-only features (personalized feed, save, insights)
+
+2) Login
+curl:
+```
+curl -sS -X POST $BASE/api/auth/login -H "Content-Type: application/json" -d '{"email":"ry@mail.com","password":"test"}'
+```
+Returned JSON shape (example):
+{
+  "token": "eyJhbGciOi..."
+}
+Fields:
+- token: string (JWT)
+
+UI mapping — Auth / Login screen:
+- store `token`; UI unlocks Premium/Personalized flows; show login errors if HTTP 4xx
+
+3) Feed (paged)
+curl:
+```
+curl -sS "$BASE/api/articles?page=0&size=20"
+```
+Returned JSON shape (example):
+{
+  "content": [
+    {
+      "id": "1111-2222-3333-4444",
+      "title": "Global Markets Rally",
+      "section": "Business",
+      "snippet": "Stocks rose as major tech firms...",
+      "imageUrl": null,
+      "publishedAt": "2026-03-01T12:34:56Z",
+      "sourceName": "NewsWire",
+      "externalUrl": "https://example.com/markets"
+    },
+    ...
+  ],
+  "totalPages": 5
+}
+Fields (ArticleResponse):
+- id: UUID
+- title: string
+- section: string
+- snippet: string (short teaser)
+- imageUrl: string | null
+- publishedAt: ISO timestamp
+- sourceName: string
+- externalUrl: string
+
+UI mapping — Home Feed screen / Article Card:
+- Card title ← `title`
+- Subtitle / meta ← `sourceName` + formatted `publishedAt`
+- Snippet text ← `snippet`
+- Thumbnail ← `imageUrl`
+- Tap card → navigate to Article Detail using `id` and `externalUrl` (open full article or internal view)
+- Pagination/infinite scroll uses `totalPages` and `page` param
+
+4) Single Article (gated read)
+curl:
+```
+curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/articles/$ARTICLE_ID"
+```
+Returned JSON shape (example):
+{
+  "id": "1111-2222-3333-4444",
+  "title": "Global Markets Rally",
+  "section": "Business",
+  "snippet": "Stocks rose as major tech firms...",
+  "imageUrl": null,
+  "publishedAt": "2026-03-01T12:34:56Z",
+  "sourceName": "NewsWire",
+  "externalUrl": "https://example.com/markets"
+}
+Fields: same as ArticleResponse above.
+
+UI mapping — Article Detail / Read screen:
+- Header: `title`, `section`
+- Meta: `sourceName`, `publishedAt`
+- Body area: render `externalUrl` content or snippet as preview; client may fetch full article text elsewhere
+- Gate handling: if server responds 403 with code `LIMIT_REACHED`, show read-limit overlay and Upgrade/Login CTA; on success, increment local read meter UI
+
+5) Article Context (Gemini / Premium)
+curl:
+```
+curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/articles/$ARTICLE_ID/context"
+```
+Returned JSON shape (example):
+{
+  "entities": [
+    {
+      "title": "Tech Sector",
+      "shortSummary": "Major tech firms reported strong earnings, driving market optimism.",
+      "source": "AI Context (Gemini)",
+      "metadata": null
+    },
+    {
+      "title": "Company X",
+      "shortSummary": "Company X beat revenue estimates by 12%.",
+      "source": "AI Context (Gemini)",
+      "metadata": { "relevance": 0.93, "type": "company" }
+    }
+  ]
+}
+Fields (ContextResponse):
+- entities: array of ContextEntity
+  - title: string (entity header)
+  - shortSummary: string (concise AI summary)
+  - source: string (e.g., "AI Context (Gemini)")
+  - metadata: object | null (optional fields like relevance, type)
+
+UI mapping — Context Panel / Deep Dive tab:
+- Panel list: each `entities[i]` → a context card with:
+  - Card header ← `title`
+  - Body summary ← `shortSummary`
+  - Badge/credit ← `source`
+  - Optional info icon expands `metadata` (confidence/relevance)
+- Locked state: if 403 `PREMIUM_FEATURE_LOCKED`, show upgrade CTA; if cached, show instantly, else spinner while live fetch happens
+- User interaction: expand entity to navigate to related articles or external links
+
+6) Trending
+curl:
+```
+curl -sS "$BASE/api/articles/trending?limit=10"
+```
+Returned JSON shape: list of `ArticleResponse` (same ArticleResponse shape)
+[
+  { "id": "...", "title": "...", "section": "...", "snippet": "...", "imageUrl": null, "publishedAt": "...", "sourceName": "...", "externalUrl": "..." },
+  ...
+]
+Fields: same as ArticleResponse.
+
+UI mapping — Trending screen / strip:
+- Ranked list or carousel of article cards (title, snippet, rank badge)
+- View counts not returned directly; show position or sparklines if client computes them from engagement data
+- Tap → Article Detail (respect gating)
+
+7) Save (bookmark)
+curl:
+```
+curl -sS -X POST -H "Authorization: Bearer $TOKEN" $BASE/api/articles/$ARTICLE_ID/save
+```
+Returned JSON shape (example):
+{
+  "status": "saved"
+}
+Fields:
+- status: string ("saved")
+
+UI mapping — Save button on Article Card/Detail:
+- On tap: optimistically fill bookmark icon; call endpoint and show toast using `status`
+- Saved list (client-managed) can display saved article cards by combining engagement history + Article fetches
+
+8) Subscription upgrade (demo)
+curl:
+```
+curl -sS -X POST -H "Authorization: Bearer $TOKEN" $BASE/api/subscription/upgrade
+```
+Returned JSON shape (example):
+{
+  "tier": "PREMIUM"
+}
+Fields:
+- tier: string
+
+UI mapping — Subscription screen (upgrade action):
+- After success: update client-side user state to `tier=PREMIUM`; unlock premium UI actions (Context panel)
+- Show confirmation modal and refresh protected screens
+
+9) User upgrade that returns new token
+curl:
+```
+curl -sS -X POST -H "Authorization: Bearer $TOKEN" $BASE/api/user/upgrade
+```
+Returned JSON shape (example):
+{
+  "token": "eyJhbGciOi...",
+  "tier": "PREMIUM"
+}
+Fields:
+- token: string (new JWT with updated tier)
+- tier: string
+
+UI mapping — Upgrade flow needing immediate entitlement:
+- Replace stored `TOKEN` with returned `token`
+- Immediately enable premium-only UI (Context panel visible), and refresh any UI that depended on JWT claims
+
+10) User Insights
+curl:
+```
+curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/api/user/insights"
+```
+Returned JSON shape (example):
+{
+  "user": { "email": "ry@mail.com", "tier": "FREE" },
+  "dailyUsage": { "date": "2026-03-01", "reads": 2, "limit": 5, "isUnlimited": false },
+  "topSections": [
+    { "section": "Business", "views": 6, "percent": 0.6 },
+    { "section": "Tech", "views": 4, "percent": 0.4 }
+  ],
+  "recentHistory": [
+    { "articleId": "1111-2222", "title": "Global Markets Rally", "section": "Business", "snippet": "...", "imageUrl": null, "publishedAt": "2026-03-01T12:34:56Z", "sourceName": "NewsWire" },
+    ...
+  ]
+}
+Fields:
+- user: { email, tier }
+- dailyUsage: { date, reads, limit, isUnlimited }
+- topSections: array of { section, views, percent }
+- recentHistory: array of ArticleSummary (articleId, title, section, snippet, imageUrl, publishedAt, sourceName)
+
+UI mapping — Insights / Dashboard screen:
+- Header: user email + tier badge
+- Daily meter: visualize `reads` / `limit` (show unlimited if `isUnlimited=true`)
+- Top sections: horizontal bar chart or chips using `topSections` with percent and counts
+- Recent history: list of ArticleSummary cards (tap → Article Detail)
+- Upgrade CTA: present if `isUnlimited=false` and reads near limit
+
+Final notes on integration and UX
+- All protected endpoints require `Authorization: Bearer <TOKEN>`; store token securely and attach it to requests.
+- Error cases (403 codes `LIMIT_REACHED` or `PREMIUM_FEATURE_LOCKED`) should trigger UI modals with clear CTAs (login/upgrade).
+- The client should handle cached vs live behavior for `/context` (show cached instantly, spinner + update on live fetch).
+- Use the `ArticleResponse` shape as the canonical article DTO across feed, trending, and detail screens to simplify rendering code.
+
+If you want, I can produce minimal React/Flutter component prop definitions for each screen mapped to these JSON shapes. Which UI framework should I target?

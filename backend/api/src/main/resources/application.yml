@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/storystream
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+storystream:
+  gemini:
+    api-key: AIzaSyBuPUsZB5TTXJZpQm9tJ8e9wIchPBJI7uY
+    model: gemini-2.5-flash-lite
+    max-output-tokens: 800
+    temperature: 0.0
+    context-cache-ttl-days: 7
+
+logging:
+  level:
+    com.storystream.api.service: DEBUG
