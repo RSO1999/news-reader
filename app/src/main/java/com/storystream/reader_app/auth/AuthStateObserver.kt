@@ -11,9 +11,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Observes TokenProvider.tokenFlow and updates AuthStateHolder so UI reacts to token clears.
- */
 @Singleton
 class AuthStateObserver @Inject constructor(
     tokenProvider: TokenProvider
@@ -26,7 +23,6 @@ class AuthStateObserver @Inject constructor(
                 if (token == null) {
                     AuthStateHolder.updateState(AuthState())
                 } else {
-                    // Optionally restore claims from token
                     val session = com.storystream.reader_app.data.UserSession.restoreFromToken(token)
                     AuthStateHolder.updateState(AuthState(isAuthenticated = true, email = session.email, tier = session.tier, token = session.token))
                 }

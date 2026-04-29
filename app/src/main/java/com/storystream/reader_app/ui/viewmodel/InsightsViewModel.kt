@@ -60,7 +60,6 @@ class InsightsViewModel @Inject constructor(
         viewModelScope.launch {
             val res = withContext(ioDispatcher) { authRepo.upgradeUser() }
             if (res.isSuccess) {
-                // Reload insights from server to get updated premium state
                 loadInsights()
                 _events.emit(InsightsEvent.UpgradeSuccess)
             } else {

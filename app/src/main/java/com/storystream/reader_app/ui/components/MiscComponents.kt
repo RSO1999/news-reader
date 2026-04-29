@@ -36,7 +36,6 @@ fun Masthead(
             modifier = Modifier
                 .fillMaxWidth()
                 .drawBehind {
-                    // Bottom border line
                     drawLine(
                         color = borderColor,
                         start = Offset(0f, size.height),

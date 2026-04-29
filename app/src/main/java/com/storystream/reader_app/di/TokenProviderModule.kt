@@ -8,9 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-/**
- * Bind the concrete TokenProviderImpl to the TokenProvider interface for injection.
- */
+
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class TokenProviderModule {

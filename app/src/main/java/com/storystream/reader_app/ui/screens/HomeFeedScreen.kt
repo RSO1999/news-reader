@@ -31,7 +31,6 @@ import com.storystream.reader_app.ui.viewmodel.HomeFeedViewModel
 
 @Composable
 fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedViewModel = viewModel()) {
-    // collect lifecycle-aware ui state from the viewmodel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val articles = uiState.articles
@@ -41,7 +40,6 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
     val feedItems = if (articles.isNotEmpty()) articles.drop(1) else emptyList()
     val listState = rememberLazyListState()
 
-    // load first page on composition
     LaunchedEffect(Unit) {
         viewModel.loadFirstPage()
     }
@@ -70,7 +68,6 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                     contentPadding = PaddingValues(bottom = 80.dp),
                     state = listState
                 ) {
-                    // Header with personalization toggle
                     item {
                         Row(
                             modifier = Modifier
@@ -87,7 +84,6 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                             )
                             Spacer(modifier = Modifier.weight(1f))
 
-                            // Personalization toggle with animated color
                             val toggleBg by animateColorAsState(
                                 targetValue = if (uiState.personalized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                 animationSpec = spring(stiffness = Spring.StiffnessLow),
@@ -126,7 +122,6 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                         }
                     }
 
-                    // Feature card for top story
                     if (topStory != null) {
                         item {
                             AnimatedListItem(index = 0) {
@@ -145,7 +140,6 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                         }
                     }
 
-                    // Section divider
                     item {
                         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         Row(
@@ -173,7 +167,6 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                         }
                     }
 
-                    // Article cards with staggered animation
                     itemsIndexed(feedItems) { index, article ->
                         AnimatedListItem(index = index + 1) {
                             ArticleCard(
@@ -185,13 +178,11 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                             )
                         }
 
-                        // Infinite scroll
                         if (index >= feedItems.lastIndex - 3 && !loading && uiState.page <= uiState.totalPages) {
                             viewModel.loadNextPage()
                         }
                     }
 
-                    // Loading indicator
                     item {
                         if (loading) {
                             Box(
@@ -210,7 +201,6 @@ fun HomeFeedScreen(onOpenArticle: (String) -> Unit = {}, viewModel: HomeFeedView
                     }
                 }
 
-                // Error state
                 if (error != null && articles.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {

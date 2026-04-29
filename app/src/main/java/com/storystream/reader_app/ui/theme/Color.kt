@@ -2,7 +2,6 @@ package com.storystream.reader_app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light Mode Colors
 val BackgroundLight = Color(0xFFFAF8F5) // warm ivory
 val SurfaceLight = Color(0xFFFFFFFF)
 val OnSurfaceLight = Color(0xFF181D27)
@@ -26,7 +25,6 @@ val OutlineDark = Color(0xFF2D3140)
 val SurfaceVariantDark = Color(0xFF272B36)
 val OnSurfaceVariantDark = Color(0xFF7E8FA6)
 
-// Custom Tokens
 val SectionBadge = PrimaryLight // coral
 val SaveColor = TertiaryLight // blue
 val TabActive = PrimaryLight // coral

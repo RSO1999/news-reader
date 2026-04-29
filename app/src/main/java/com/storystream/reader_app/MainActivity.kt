@@ -55,13 +55,11 @@ import com.storystream.reader_app.ui.screens.TrendingScreen
 // User session
 import com.storystream.reader_app.data.SecureTokenStore
 
-// Trending VM
 import com.storystream.reader_app.ui.viewmodel.TrendingViewModel
 import com.storystream.reader_app.ui.viewmodel.InsightsViewModel
 import com.storystream.reader_app.ui.viewmodel.ArticleDetailViewModel
 import com.storystream.reader_app.repository.AuthStateHolder
 
-// Custom trending-up line graph icon (no extended icons dependency needed)
 private val TrendingUpIcon: ImageVector by lazy {
     ImageVector.Builder(
         name = "TrendingUp",
@@ -79,7 +77,6 @@ private val TrendingUpIcon: ImageVector by lazy {
     }.build()
 }
 
-// Styled bottom tab bar with icons and active/inactive states
 @Composable
 fun BottomTabBar(selectedTab: String, onSelect: (String) -> Unit) {
     val appColors = LocalAppColors.current
@@ -148,7 +145,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize Tink-backed secure token store
         try {
             SecureTokenStore.init(this)
         } catch (ex: Exception) {
@@ -160,26 +156,21 @@ class MainActivity : ComponentActivity() {
                 val authState by AuthStateHolder.authState.collectAsState()
 
                 if (!authState.isAuthenticated) {
-                    // Show auth screens
                     val authMode = rememberSaveable { mutableStateOf("login") } // "login" or "create"
 
                     if (authMode.value == "login") {
                         LoginScreen(onLogin = { _, _ ->
-                            // AuthRepository handles state update
                         }, onCreateAccount = { authMode.value = "create" }, modifier = Modifier.fillMaxSize())
                     } else {
                         CreateAccountScreen(modifier = Modifier.fillMaxSize(), onCreate = { _, _ ->
-                            // AuthRepository handles state update
                         }, onBack = { authMode.value = "login" })
                     }
 
                 } else {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        // state: current tab and optional selected article id
                         val currentTab = rememberSaveable { mutableStateOf("Home") }
                         val currentArticleId = rememberSaveable { mutableStateOf<String?>(null) }
 
-                        // create VMs at host level
                         val trendingVm: TrendingViewModel = viewModel()
                         val insightsVm: InsightsViewModel = viewModel()
                         val articleDetailVm: ArticleDetailViewModel = viewModel()
@@ -205,7 +196,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            // Bottom tab bar
                             BottomTabBar(selectedTab = currentTab.value, onSelect = { tab ->
                                 currentArticleId.value = null
                                 currentTab.value = tab

@@ -22,10 +22,8 @@ object SecureTokenStore {
     private var prefs: SharedPreferences? = null
 
     fun init(context: Context) {
-        // Register AEAD config
         try {
             AeadConfig.register()
-            // Build or load the keyset in SharedPreferences, backed by Android Keystore
             val manager = AndroidKeysetManager.Builder()
                 .withSharedPref(context, PREFS_NAME, KEYSET_NAME)
                 .withKeyTemplate(AeadKeyTemplates.AES128_GCM)
@@ -37,7 +35,6 @@ object SecureTokenStore {
             aead = keysetHandle.getPrimitive(Aead::class.java)
             prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         } catch (e: Exception) {
-            // If Tink initialization fails, clear state and rethrow
             aead = null
             prefs = null
             throw e

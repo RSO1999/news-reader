@@ -14,9 +14,7 @@ data class UserSession(
             return decodeClaims(session, jwt)
         }
 
-        /**
-         * Restore session state from an existing token (used at startup). This does not imply a fresh login action.
-         */
+
         fun restoreFromToken(jwt: String): UserSession {
             val session = UserSession(token = jwt)
             return decodeClaims(session, jwt)
@@ -27,7 +25,6 @@ data class UserSession(
                 val parts = jwt.split(".")
                 if (parts.size >= 2) {
                     val payload = parts[1]
-                    // base64url decode
                     val decoded = String(Base64.decode(payload, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP))
                     val obj = JSONObject(decoded)
                     val email = if (obj.has("sub")) obj.getString("sub") else session.email
@@ -37,7 +34,6 @@ data class UserSession(
                     session
                 }
             } catch (_: Exception) {
-                // ignore parsing errors
                 session
             }
         }

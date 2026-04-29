@@ -68,17 +68,14 @@ fun InsightsScreen(
     val loading = uiState.loading
     val error = uiState.error
 
-    // Derive effective tier from server response, fallback to passed-in param
     val effectiveTier = insights?.user?.tier ?: userTier
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Refresh insights each time this screen enters composition (tab switch)
     LaunchedEffect(Unit) {
         viewModel.loadInsights()
     }
 
-    // Consume one-shot events (e.g., upgrade result)
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { ev ->
             when (ev) {
@@ -104,7 +101,6 @@ fun InsightsScreen(
             ) {
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    // ---- Profile Card ----
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
@@ -114,7 +110,6 @@ fun InsightsScreen(
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Avatar
                                 Box(
                                     modifier = Modifier
                                         .size(52.dp)
@@ -141,7 +136,6 @@ fun InsightsScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    // Tier badge
                                     val tierBg = if (effectiveTier == "PREMIUM") appColors.premium else MaterialTheme.colorScheme.surfaceVariant
                                     val tierFg = if (effectiveTier == "PREMIUM") appColors.premiumForeground else MaterialTheme.colorScheme.onSurfaceVariant
                                     Text(
@@ -191,7 +185,6 @@ fun InsightsScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // ---- Insights section ----
                     Text(
                         text = "Your Activity",
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
@@ -218,7 +211,6 @@ fun InsightsScreen(
                             val showUsage = serverTier != "PREMIUM"
                             val progress = if (daily.isUnlimited || daily.limit == 0) 1f else (daily.reads.toFloat() / daily.limit.toFloat()).coerceIn(0f, 1f)
 
-                            // ---- Daily Usage ----
                             if (showUsage) {
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
@@ -257,7 +249,6 @@ fun InsightsScreen(
                                 Spacer(modifier = Modifier.height(14.dp))
                             }
 
-                            // ---- Top Sections as Chips ----
                             if (insights.topSections.isNotEmpty()) {
                                 Text(
                                     text = "Top Sections",
@@ -299,7 +290,6 @@ fun InsightsScreen(
                                 Spacer(modifier = Modifier.height(14.dp))
                             }
 
-                            // ---- Recent History ----
                             if (insights.recentHistory.isNotEmpty()) {
                                 Text(
                                     text = "Recent History",

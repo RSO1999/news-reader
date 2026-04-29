@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 
-// ---- Extended color tokens accessible via LocalAppColors ----
 data class AppColors(
     val sectionBadge: Color,
     val save: Color,
@@ -46,7 +45,6 @@ val DarkAppColors = AppColors(
 
 val LocalAppColors = staticCompositionLocalOf { LightAppColors }
 
-// ---- Material Color Schemes ----
 private val LightColors: ColorScheme = lightColorScheme(
     primary = PrimaryLight,
     onPrimary = OnPrimaryLight,
@@ -83,7 +81,6 @@ private val DarkColors: ColorScheme = darkColorScheme(
     onError = Color.White
 )
 
-// ---- Shapes ----
 private val AppShapes = Shapes(
     small = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
     medium = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
@@ -108,7 +105,6 @@ fun AppTheme(
     }
 }
 
-// Minimal helper composable for usage in previews or sample screens
 @Suppress("unused")
 @Composable
 fun ThemedSurface(content: @Composable () -> Unit) {

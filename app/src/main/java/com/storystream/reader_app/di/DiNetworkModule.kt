@@ -1,4 +1,3 @@
-
 package com.storystream.reader_app.di
 
 import com.storystream.reader_app.data.TokenProvider
@@ -18,13 +17,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Named
 import javax.inject.Singleton
 
-/**
- * Hilt module that provides network singletons (OkHttp + Retrofit + APIs).
- */
 @Module
 @InstallIn(SingletonComponent::class)
 object DiNetworkModule {
-
     @Provides
     @Singleton
     @Named("BaseUrl")
@@ -64,7 +59,6 @@ object DiNetworkModule {
             .build()
     }
 
-    // Dedicated refresh client WITHOUT auth interceptor to avoid recursion
     @Provides
     @Singleton
     @Named("RefreshClient")

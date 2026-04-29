@@ -6,16 +6,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Define font families (assuming Google Fonts are loaded; replace with actual FontFamily if needed)
-val PlayfairDisplay = FontFamily.Serif // Placeholder for Playfair Display
-val Inter = FontFamily.SansSerif // Placeholder for Inter
-
-// Updated Typography
+val PlayfairDisplay = FontFamily.Serif
+val Inter = FontFamily.SansSerif
 val Typography = Typography(
-    // Headings: Playfair Display
     displayLarge = TextStyle(
         fontFamily = PlayfairDisplay,
-        fontWeight = FontWeight.Bold, // 700
+        fontWeight = FontWeight.Bold,
         fontSize = 57.sp,
         lineHeight = 64.sp,
         letterSpacing = 0.sp
@@ -36,7 +32,7 @@ val Typography = Typography(
     ),
     headlineLarge = TextStyle(
         fontFamily = PlayfairDisplay,
-        fontWeight = FontWeight.SemiBold, // 600
+        fontWeight = FontWeight.SemiBold,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.sp
@@ -57,7 +53,7 @@ val Typography = Typography(
     ),
     titleLarge = TextStyle(
         fontFamily = PlayfairDisplay,
-        fontWeight = FontWeight.Medium, // 500
+        fontWeight = FontWeight.Medium,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp

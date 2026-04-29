@@ -25,19 +25,16 @@ import com.storystream.reader_app.ui.viewmodel.TrendingViewModel
 
 @Composable
 fun TrendingScreen(onOpenArticle: (String) -> Unit = {}, viewModel: TrendingViewModel = viewModel()) {
-    // lifecycle-aware collection of UiState
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val trendingArticles = uiState.trendingArticles
     val loading = uiState.loading
     val error = uiState.error
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Trigger load on composition
     LaunchedEffect(Unit) {
         viewModel.loadTrending()
     }
 
-    // Consume one-shot events
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { ev ->
             when (ev) {
@@ -55,15 +52,12 @@ fun TrendingScreen(onOpenArticle: (String) -> Unit = {}, viewModel: TrendingView
                     .padding(scaffoldPadding)
                     .background(MaterialTheme.colorScheme.background)
             ) {
-
-                // Header
                 Text(
                     text = "Most Popular",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
                 )
-
                 when {
                     loading -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -108,7 +102,6 @@ fun TrendingScreen(onOpenArticle: (String) -> Unit = {}, viewModel: TrendingView
                                         modifier = Modifier.padding(start = 16.dp, end = 0.dp, top = 6.dp, bottom = 6.dp),
                                         verticalAlignment = Alignment.Top
                                     ) {
-                                        // Rank badge
                                         Box(
                                             modifier = Modifier
                                                 .size(28.dp)
@@ -127,7 +120,6 @@ fun TrendingScreen(onOpenArticle: (String) -> Unit = {}, viewModel: TrendingView
                                                 color = if (index < 3) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
-
                                         ArticleCard(
                                             article = article,
                                             modifier = Modifier.padding(start = 8.dp, end = 16.dp),

@@ -6,21 +6,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Implementation that delegates persistence to SecureTokenStore but keeps a
- * small in-memory cache (MutableStateFlow) for synchronous reads and observers.
- *
- * IMPORTANT: After you adopt this provider, update places that directly call
- * SecureTokenStore.saveToken/saveTokens to call tokenProvider.updateTokens(...) instead,
- * so the in-memory cache stays in sync.
- */
 @Singleton
 class TokenProviderImpl @Inject constructor() : TokenProvider {
     private val _tokenFlow = MutableStateFlow<String?>(SecureTokenStore.getAccessToken())
     override val tokenFlow: StateFlow<String?> = _tokenFlow.asStateFlow()
 
     override fun getToken(): String? {
-        // Prefer fast cached value; fall back to storage if null (defensive)
         return _tokenFlow.value ?: SecureTokenStore.getAccessToken()
     }
 
@@ -47,4 +38,3 @@ class TokenProviderImpl @Inject constructor() : TokenProvider {
         _tokenFlow.value = accessToken
     }
 }
-

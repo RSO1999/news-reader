@@ -30,7 +30,6 @@ fun ContextEntityCard(
     index: Int = 0,
     onClick: () -> Unit = {}
 ) {
-    // Staggered entry animation
     val alpha = remember { Animatable(0f) }
     val offsetY = remember { Animatable(20f) }
 
@@ -56,7 +55,6 @@ fun ContextEntityCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            // Title
             Text(
                 text = entity.title,
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -65,7 +63,6 @@ fun ContextEntityCard(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Summary
             Text(
                 text = entity.summary,
                 style = MaterialTheme.typography.bodyMedium,
@@ -75,12 +72,10 @@ fun ContextEntityCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Source badge + optional metadata
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Source badge
                 Text(
                     text = entity.source,
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -96,7 +91,6 @@ fun ContextEntityCard(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 )
 
-                // Optional metadata
                 entity.metadata?.let { meta ->
                     Spacer(modifier = Modifier.width(8.dp))
                     meta.entries.take(2).forEach { (key, value) ->
@@ -112,4 +106,3 @@ fun ContextEntityCard(
         }
     }
 }
-

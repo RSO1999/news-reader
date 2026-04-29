@@ -68,7 +68,6 @@ fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? =
                     .background(MaterialTheme.colorScheme.background)
             ) {
 
-                // Header
                 Text(
                     text = "Your Library",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
@@ -102,7 +101,6 @@ fun SavedScreen(onOpenArticle: (String) -> Unit = {}, vmParam: SavedViewModel? =
                         }
                     }
                     saved.isEmpty() -> {
-                        // Empty state with icon and message
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(

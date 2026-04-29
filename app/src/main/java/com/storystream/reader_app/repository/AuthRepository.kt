@@ -24,7 +24,6 @@ object AuthStateHolder {
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     init {
-        // Initialize from stored token
         val token = SecureTokenStore.getToken()
         if (token != null) {
             val userSession = UserSession.restoreFromToken(token)
@@ -52,9 +51,7 @@ class AuthRepository @Inject constructor(
             val resp = withContext(Dispatchers.IO) {
                 api.register(com.storystream.reader_app.network.AuthRequest(email, password))
             }
-            // save tokens via TokenProvider so the in-memory cache updates
             tokenProvider.updateTokens(resp.token, resp.refreshToken)
-            // decode minimal claims (email/tier) client-side
             val session = UserSession.login(email, resp.token)
             AuthStateHolder.updateState(AuthState(
                 isAuthenticated = true,
@@ -90,7 +87,6 @@ class AuthRepository @Inject constructor(
     suspend fun upgradeUser(): Result<Unit> {
         return try {
             val resp = withContext(Dispatchers.IO) { api.upgradeUser() }
-            // replace stored token with new premium token
             tokenProvider.updateToken(null)
             tokenProvider.updateToken(resp.token)
             val session = UserSession.restoreFromToken(resp.token)

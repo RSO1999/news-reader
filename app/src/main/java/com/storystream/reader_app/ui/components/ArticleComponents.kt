@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import kotlinx.coroutines.launch
 
-// ---- Fade-in + Slide entry animation for list items ----
 @Composable
 fun AnimatedListItem(
     index: Int,
@@ -82,7 +81,6 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(modifier = Modifier.padding(14.dp)) {
-            // Thumbnail
             if (!article.imageUrl.isNullOrEmpty()) {
                 AsyncImage(
                     model = article.imageUrl,
@@ -110,7 +108,6 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
             Spacer(modifier = Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                // Section badge
                 Text(
                     text = article.section.uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -123,7 +120,6 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Title
                 Text(
                     text = article.title,
                     style = MaterialTheme.typography.titleSmall.copy(
@@ -136,7 +132,6 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
 
                 Spacer(modifier = Modifier.height(3.dp))
 
-                // Snippet
                 Text(
                     text = article.snippet,
                     style = MaterialTheme.typography.bodySmall,
@@ -148,7 +143,6 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Meta row
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = article.sourceName,
@@ -170,7 +164,6 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
 
             Spacer(modifier = Modifier.width(4.dp))
 
-            // SaveButton top-right
             SaveButton(
                 isSaved = isSaved,
                 onClick = {
@@ -209,7 +202,6 @@ fun FeatureCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // Hero image
             if (!imageUrl.isNullOrEmpty()) {
                 AsyncImage(
                     model = imageUrl,
@@ -233,9 +225,7 @@ fun FeatureCard(
                 }
             }
 
-            // Content below image
             Column(modifier = Modifier.padding(16.dp)) {
-                // Section badge
                 if (section.isNotEmpty()) {
                     Text(
                         text = section.uppercase(),
@@ -254,7 +244,6 @@ fun FeatureCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top
                 ) {
-                    // Title
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineSmall.copy(
@@ -267,11 +256,9 @@ fun FeatureCard(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // SaveButton
                     SaveButton(isSaved = isSaved, onClick = onSave)
                 }
 
-                // Meta row
                 if (sourceName.isNotEmpty() || publishedAt.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -312,7 +299,6 @@ fun SaveButton(isSaved: Boolean, modifier: Modifier = Modifier, onClick: () -> U
     androidx.compose.material3.IconButton(
         onClick = {
             scope.launch {
-                // Pulse / scale animation on tap
                 scale.animateTo(1.3f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessHigh))
                 scale.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
             }
