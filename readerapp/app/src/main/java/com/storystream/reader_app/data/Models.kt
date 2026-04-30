@@ -2,6 +2,7 @@ package com.storystream.reader_app.data
 
 import java.time.Instant
 import com.google.gson.annotations.SerializedName
+import com.storystream.reader_app.util.ArticleDateFormatter
 
 data class ArticleResponse(
     val id: String,
@@ -10,9 +11,12 @@ data class ArticleResponse(
     val snippet: String,
     val imageUrl: String? = null,
     val publishedAt: String = Instant.now().toString(),
-    val sourceName: String = "NewsWire",
+    val sourceName: String = "Gemini",
     val externalUrl: String = ""
-)
+) {
+    val displayPublishedAt: String
+        get() = ArticleDateFormatter.formatIsoToDisplay(publishedAt)
+}
 
 data class TopSection(val section: String, val views: Int, val percent: Double)
 
@@ -39,7 +43,10 @@ data class ArticleSummary(
     val imageUrl: String? = null,
     val publishedAt: String,
     val sourceName: String
-)
+) {
+    val displayPublishedAt: String
+        get() = ArticleDateFormatter.formatIsoToDisplay(publishedAt)
+}
 
 data class ReadingInsightsResponse(
     val user: UserInfo,

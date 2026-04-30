@@ -14,11 +14,10 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String password; // This will be a BCRYPT HASH
+    private String password;
 
-    private String subscriptionTier = "FREE"; // DEFAULT
+    private String subscriptionTier = "FREE";
 
-    // Getters and Setters
     public UUID getId() { return id; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

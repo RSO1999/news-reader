@@ -7,11 +7,7 @@ import com.storystream.reader_app.data.TokenProvider
 import com.storystream.reader_app.util.JwtUtils
 import kotlin.jvm.Synchronized
 
-/**
- * Authenticator that performs a single-flight token refresh using the refresh token.
- * It uses an injected RefreshApi (Retrofit) backed by a dedicated client without auth
- * interceptor to avoid recursion. Concurrent 401s are deduplicated via a simple monitor.
- */
+
 class TokenAuthenticator(
     private val tokenProvider: TokenProvider,
     private val refreshApi: RefreshApi

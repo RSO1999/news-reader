@@ -18,10 +18,7 @@ public class SubscriptionController {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Demo upgrade endpoint.
-     * NOTE: In a real product this would be driven by a purchase provider (Play Billing / Stripe).
-     */
+
     @PostMapping("/upgrade")
     public ResponseEntity<?> upgradeToPremium(Principal principal) {
         User user = userRepository.findByEmail(principal.getName())

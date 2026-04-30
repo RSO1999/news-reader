@@ -210,7 +210,7 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, viewModel: A
 
                             // Meta info
                             Text(
-                                text = "${art.sourceName} · ${art.publishedAt}",
+                                text = "${art.sourceName} · ${art.displayPublishedAt}",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -235,22 +235,6 @@ fun ArticleDetailScreen(articleId: String, onBack: () -> Unit = {}, viewModel: A
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // External link button
-                            if (art.externalUrl.isNotEmpty()) {
-                                OutlinedButton(
-                                    onClick = { /* Open external URL */ },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "Read Full Article")
-                                }
-                            }
 
                             Spacer(modifier = Modifier.height(12.dp))
 

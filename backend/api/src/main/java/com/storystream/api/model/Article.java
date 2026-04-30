@@ -45,7 +45,6 @@ public class Article {
     @Column(name = "context_payload", columnDefinition = "jsonb")
     private Map<String, Object> contextPayload;
 
-    // Getters and Setters (Generate these in your IDE or use Lombok @Data if you added it)
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getExternalUrl() { return externalUrl; }

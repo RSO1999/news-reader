@@ -17,9 +17,7 @@ public class EngagementEvent {
 
     private UUID articleId;
 
-    /**
-     * VIEW, SAVE, LIKE, etc.
-     */
+
     private String eventType;
 
     private Instant createdAt;

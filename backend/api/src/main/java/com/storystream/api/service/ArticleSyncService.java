@@ -27,7 +27,6 @@ public class ArticleSyncService {
         this.restClient = RestClient.create("https://content.guardianapis.com");
     }
 
-    // This annotation makes the method run automatically exactly once when you start the app!
     @EventListener(ApplicationReadyEvent.class)
     public void fetchAndSaveArticles() {
         log.info("Fetching latest articles from The Guardian...");
@@ -50,7 +49,6 @@ public class ArticleSyncService {
                     article.setSourceName("The Guardian");
 
                     if (gArticle.fields() != null) {
-                        // Use trailText (snippet) if available, otherwise fallback to headline
                         article.setSnippet(gArticle.fields().trailText() != null ? gArticle.fields().trailText() : gArticle.fields().headline());
                         article.setImageUrl(gArticle.fields().thumbnail());
                     }
@@ -59,7 +57,6 @@ public class ArticleSyncService {
                         articleRepository.save(article);
                         savedCount++;
                     } catch (DataIntegrityViolationException e) {
-                        // This naturally ignores duplicates because of the UNIQUE constraint on external_url!
                         log.debug("Article already exists, skipping: {}", article.getTitle());
                     }
                 }

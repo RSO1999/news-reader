@@ -16,28 +16,44 @@ data class AuthState(
     val isAuthenticated: Boolean = false,
     val email: String? = null,
     val tier: String = "FREE",
-    val token: String? = null
+    val token: String? = null,
+    val isInitializing: Boolean = true
 )
 
 object AuthStateHolder {
     private val _authState = MutableStateFlow(AuthState())
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
-    init {
+    @Volatile
+    private var restoredFromStore = false
+
+    fun initializeFromStoredToken() {
+        if (restoredFromStore) return
+
+        synchronized(this) {
+            if (restoredFromStore) return
+            restoredFromStore = true
+        }
+
         val token = SecureTokenStore.getToken()
-        if (token != null) {
+        val nextState = if (token != null) {
             val userSession = UserSession.restoreFromToken(token)
-            _authState.value = AuthState(
+            AuthState(
                 isAuthenticated = true,
                 email = userSession.email,
                 tier = userSession.tier,
-                token = userSession.token
+                token = userSession.token,
+                isInitializing = false
             )
+        } else {
+            AuthState(isInitializing = false)
         }
+
+        _authState.value = nextState
     }
 
     fun updateState(newState: AuthState) {
-        _authState.value = newState
+        _authState.value = newState.copy(isInitializing = false)
     }
 }
 

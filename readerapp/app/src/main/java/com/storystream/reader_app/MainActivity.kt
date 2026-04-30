@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,8 +54,6 @@ import com.storystream.reader_app.ui.screens.CreateAccountScreen
 import com.storystream.reader_app.ui.screens.TrendingScreen
 
 // User session
-import com.storystream.reader_app.data.SecureTokenStore
-
 import com.storystream.reader_app.ui.viewmodel.TrendingViewModel
 import com.storystream.reader_app.ui.viewmodel.InsightsViewModel
 import com.storystream.reader_app.ui.viewmodel.ArticleDetailViewModel
@@ -145,17 +144,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
-            SecureTokenStore.init(this)
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-        }
-
         setContent {
             AppTheme {
                 val authState by AuthStateHolder.authState.collectAsState()
 
-                if (!authState.isAuthenticated) {
+                if (authState.isInitializing) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (!authState.isAuthenticated) {
                     val authMode = rememberSaveable { mutableStateOf("login") } // "login" or "create"
 
                     if (authMode.value == "login") {

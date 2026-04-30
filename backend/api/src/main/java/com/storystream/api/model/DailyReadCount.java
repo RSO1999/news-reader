@@ -15,7 +15,6 @@ public class DailyReadCount {
     private LocalDate readDate;
     private int count;
 
-    // IMPORTANT: Add a constructor for the Service to use
     public DailyReadCount() {}
 
     public DailyReadCount(UUID userId, LocalDate readDate, int count) {
@@ -24,7 +23,6 @@ public class DailyReadCount {
         this.count = count;
     }
 
-    // Getters and Setters
     public UUID getId() { return id; }
     public UUID getUserId() { return userId; }
     public void setUserId(UUID userId) { this.userId = userId; }

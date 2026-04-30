@@ -33,17 +33,13 @@ public class ArticleController {
     @Autowired private UserRepository userRepository;
     @Autowired private EngagementEventRepository engagementEventRepository;
 
-    /**
-     * Public (or optionally personalized) feed endpoint.
-     * If personalized=true and a JWT is present, we reorder results based on the user's top sections.
-     */
+
     @GetMapping
     public ArticlesPageResponse getArticles(
             @PageableDefault(page = 0, size = 20, sort = "publishedAt", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(name = "personalized", defaultValue = "false") boolean personalized,
             Principal principal
     ) {
-        // Default behavior: generic feed.
         if (!personalized || principal == null) {
             Page<Article> page = articleRepository.findAll(pageable);
             return new ArticlesPageResponse(
@@ -52,11 +48,9 @@ public class ArticleController {
             );
         }
 
-        // Personalized: fetch a larger candidate set, then reorder in-memory.
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Get top 5 sections.
         List<Object[]> top = engagementEventRepository.topSections(user.getId(), 5);
         Map<String, Integer> weights = new HashMap<>();
         int w = 5;
@@ -85,24 +79,18 @@ public class ArticleController {
         return new ArticlesPageResponse(pageItems, candidatePage.getTotalPages());
     }
 
-    /**
-     * Gated content endpoint for reading.
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getArticle(@PathVariable UUID id, Principal principal) {
-        // 1. Check the gate (Principal contains the email from the JWT)
         if (!gatingService.canAccessContent(principal.getName())) {
             return ResponseEntity.status(403).body(Map.of("code", "LIMIT_REACHED"));
         }
 
-        // 2. Fetch the article
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Article not found"));
 
-        // 3. Increment the read count
         gatingService.incrementCount(principal.getName());
 
-        // 4. Record engagement event
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         engagementEventRepository.save(new EngagementEvent(user.getId(), article.getId(), "VIEW", Instant.now()));
@@ -110,11 +98,7 @@ public class ArticleController {
         return ResponseEntity.ok(toDto(article));
     }
 
-    /**
-     * Gated context endpoint — Premium only.
-     * Read-through JSONB cache: first call hits Gemini and persists; subsequent calls
-     * return instantly from the database column (context_payload).
-     */
+
     @GetMapping("/{id}/context")
     public ResponseEntity<?> getArticleContext(@PathVariable UUID id, Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
@@ -132,10 +116,8 @@ public class ArticleController {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Article not found"));
 
-        // ── JSONB cache hit ──────────────────────────────────────────────────
         Map<String, Object> cached = article.getContextPayload();
         if (cached != null && !cached.isEmpty()) {
-            // Deserialise from cached Map back into ContextResponse
             try {
                 com.fasterxml.jackson.databind.ObjectMapper om =
                         new com.fasterxml.jackson.databind.ObjectMapper();
@@ -145,11 +127,9 @@ public class ArticleController {
                     return ResponseEntity.ok(cachedResponse);
                 }
             } catch (Exception ignored) {
-                // Fall through to live fetch if cache deserialization fails
             }
         }
 
-        // ── Live fetch via Gemini ────────────────────────────────────────────
         com.storystream.api.dto.ContextResponse response =
                 geminiContextService.getContext(
                         article.getId().toString(),
@@ -162,7 +142,6 @@ public class ArticleController {
                         article.getExternalUrl()
                 );
 
-        // ── Persist to JSONB cache ───────────────────────────────────────────
         if (!response.entities().isEmpty()) {
             try {
                 com.fasterxml.jackson.databind.ObjectMapper om =
@@ -172,16 +151,13 @@ public class ArticleController {
                 article.setContextPayload(payload);
                 articleRepository.save(article);
             } catch (Exception e) {
-                // Non-fatal — still return the response even if cache write fails
             }
         }
 
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Trending endpoint (last 24h by views).
-     */
+
     @GetMapping("/trending")
     public List<ArticleResponse> getTrending(@RequestParam(name = "limit", defaultValue = "20") int limit) {
         List<Object[]> rows = engagementEventRepository.trendingArticles(limit);
@@ -201,9 +177,7 @@ public class ArticleController {
         return results;
     }
 
-    /**
-     * Record a SAVE engagement event.
-     */
+
     @PostMapping("/{id}/save")
     public ResponseEntity<?> saveArticle(@PathVariable UUID id, Principal principal) {
         User user = userRepository.findByEmail(principal.getName())

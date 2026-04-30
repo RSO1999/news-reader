@@ -14,3 +14,6 @@
 .cxx
 local.properties
 apiKey.txt
+.env
+.env.local
+backend-api.log

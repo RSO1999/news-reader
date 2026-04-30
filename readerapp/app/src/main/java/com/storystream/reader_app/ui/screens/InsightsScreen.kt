@@ -318,7 +318,7 @@ fun InsightsScreen(
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
-                                                text = "${item.sourceName} · ${item.publishedAt}",
+                                                text = "${item.sourceName} · ${item.displayPublishedAt}",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )

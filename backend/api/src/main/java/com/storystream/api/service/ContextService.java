@@ -29,7 +29,6 @@ public class ContextService {
     public Optional<ContextEntity> getContext(String entity) {
         if (entity == null || entity.isBlank()) return Optional.empty();
 
-        // Wikipedia uses underscores instead of spaces in page titles.
         String wikiTitle = entity.trim().replace(' ', '_');
 
         try {

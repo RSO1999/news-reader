@@ -36,6 +36,7 @@ import com.storystream.reader_app.ui.theme.LocalAppColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import com.storystream.reader_app.util.ArticleDateFormatter
 import kotlinx.coroutines.launch
 
 @Composable
@@ -155,7 +156,7 @@ fun ArticleCard(article: ArticleResponse, modifier: Modifier = Modifier, onClick
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                     Text(
-                        text = article.publishedAt,
+                        text = article.displayPublishedAt,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -187,6 +188,7 @@ fun FeatureCard(
     onSave: () -> Unit = {}
 ) {
     val appColors = LocalAppColors.current
+    val displayPublishedAt = ArticleDateFormatter.formatIsoToDisplay(publishedAt)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed = interactionSource.collectIsPressedAsState()
     val cardScale = if (isPressed.value) 0.98f else 1f
@@ -259,7 +261,7 @@ fun FeatureCard(
                     SaveButton(isSaved = isSaved, onClick = onSave)
                 }
 
-                if (sourceName.isNotEmpty() || publishedAt.isNotEmpty()) {
+                if (sourceName.isNotEmpty() || displayPublishedAt.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (sourceName.isNotEmpty()) {
@@ -269,16 +271,16 @@ fun FeatureCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        if (sourceName.isNotEmpty() && publishedAt.isNotEmpty()) {
+                        if (sourceName.isNotEmpty() && displayPublishedAt.isNotEmpty()) {
                             Text(
                                 " · ",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
                         }
-                        if (publishedAt.isNotEmpty()) {
+                        if (displayPublishedAt.isNotEmpty()) {
                             Text(
-                                text = publishedAt,
+                                text = displayPublishedAt,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

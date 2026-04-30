@@ -1,9 +1,36 @@
+import java.util.Properties
+
+fun loadPropertiesFromRoot(fileName: String): Properties = Properties().apply {
+    val propertiesFile = rootProject.file(fileName)
+    if (propertiesFile.exists()) {
+        propertiesFile.inputStream().use(::load)
+    }
+}
+
+fun String.ensureTrailingSlash(): String = if (endsWith('/')) this else "$this/"
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+val exampleEnvProperties = loadPropertiesFromRoot("env.example.properties")
+val localEnvProperties = loadPropertiesFromRoot("env.local.properties")
+
+val configuredBaseUrl = (
+    localEnvProperties.getProperty("BASE_URL")
+        ?: exampleEnvProperties.getProperty("BASE_URL")
+        ?: "http://10.0.2.2:8080/"
+).trim()
+
+require(configuredBaseUrl.isNotBlank()) {
+    "BASE_URL must be set in env.local.properties or env.example.properties"
+}
+
+val storyStreamBaseUrl = configuredBaseUrl.ensureTrailingSlash()
+val usesCleartextTraffic = storyStreamBaseUrl.startsWith("http://", ignoreCase = true)
 
 android {
     namespace = "com.storystream.reader_app"
@@ -16,6 +43,9 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "BASE_URL", "\"$storyStreamBaseUrl\"")
+        manifestPlaceholders["usesCleartextTraffic"] = usesCleartextTraffic.toString()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,6 +66,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

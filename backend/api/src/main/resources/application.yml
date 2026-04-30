@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/storystream
-    username: postgres
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/storystream}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,7 +14,7 @@ spring:
 
 storystream:
   gemini:
-    api-key: AIzaSyBuPUsZB5TTXJZpQm9tJ8e9wIchPBJI7uY
+    api-key: ${STORYSTREAM_GEMINI_API_KEY:${GEMINI_API_KEY:}}
     model: gemini-2.5-flash-lite
     max-output-tokens: 800
     temperature: 0.0

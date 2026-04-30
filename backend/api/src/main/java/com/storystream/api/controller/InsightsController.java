@@ -99,7 +99,6 @@ public class InsightsController {
             try {
                 email = jwtService.extractEmail(token);
             } catch (Exception ignored) {
-                // leave email null
             }
         }
 

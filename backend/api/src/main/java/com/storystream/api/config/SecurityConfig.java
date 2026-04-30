@@ -45,27 +45,20 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // Ensure unauthenticated requests get a 401 instead of 403 in tests/clients.
                 .httpBasic(basic -> {})
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Allow browsing the article feed without auth.
-                        // Spring Security matchers are path-based; query params don't affect matching.
                         .requestMatchers("/api/articles").permitAll()
                         .requestMatchers("/api/articles/").permitAll()
 
-                        // Allow trending without auth.
                         .requestMatchers("/api/articles/trending").permitAll()
 
-                        // User endpoints require JWT.
                         .requestMatchers("/api/user/**").authenticated()
 
-                        // Subscription endpoints require JWT.
                         .requestMatchers("/api/subscription/**").authenticated()
 
-                        // Require JWT for reading article content (gated).
                         .requestMatchers("/api/articles/*/save").authenticated()
                         .requestMatchers("/api/articles/*").authenticated()
                         .requestMatchers("/api/articles/*/context").authenticated()

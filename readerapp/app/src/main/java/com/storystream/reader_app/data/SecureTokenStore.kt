@@ -18,14 +18,29 @@ object SecureTokenStore {
     private const val PREF_REFRESH_KEY = "secure_refresh_token"
     private const val MASTER_KEY_URI = "android-keystore://readerapp_master_key"
 
+    @Volatile
+    private var appContext: Context? = null
+
+    @Volatile
+    private var initialized = false
+
     private var aead: Aead? = null
     private var prefs: SharedPreferences? = null
 
+    fun prepare(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    @Synchronized
     fun init(context: Context) {
+        if (initialized && aead != null && prefs != null) return
+
         try {
+            val applicationContext = context.applicationContext
+            appContext = applicationContext
             AeadConfig.register()
             val manager = AndroidKeysetManager.Builder()
-                .withSharedPref(context, PREFS_NAME, KEYSET_NAME)
+                .withSharedPref(applicationContext, PREFS_NAME, KEYSET_NAME)
                 .withKeyTemplate(AeadKeyTemplates.AES128_GCM)
                 .withMasterKeyUri(MASTER_KEY_URI)
                 .build()
@@ -33,12 +48,20 @@ object SecureTokenStore {
             val keysetHandle: KeysetHandle = manager.keysetHandle
 
             aead = keysetHandle.getPrimitive(Aead::class.java)
-            prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            initialized = true
         } catch (e: Exception) {
             aead = null
             prefs = null
+            initialized = false
             throw e
         }
+    }
+
+    private fun ensureInitialized() {
+        if (initialized && aead != null && prefs != null) return
+        val context = appContext ?: return
+        runCatching { init(context) }
     }
 
     fun saveToken(token: String) {
@@ -46,6 +69,7 @@ object SecureTokenStore {
     }
 
     fun saveTokens(accessToken: String, refreshToken: String) {
+        ensureInitialized()
         saveAccessToken(accessToken)
         val localPrefs = prefs ?: return
         val localAead = aead ?: return
@@ -57,6 +81,7 @@ object SecureTokenStore {
     }
 
     private fun saveAccessToken(token: String) {
+        ensureInitialized()
         val localPrefs = prefs ?: return
         val localAead = aead ?: return
         val ciphertext = localAead.encrypt(token.toByteArray(StandardCharsets.UTF_8), null)
@@ -71,6 +96,7 @@ object SecureTokenStore {
     }
 
     fun getAccessToken(): String? {
+        ensureInitialized()
         val localPrefs = prefs ?: return null
         val localAead = aead ?: return null
         val encoded = localPrefs.getString(PREF_SECRET_KEY, null) ?: return null
@@ -95,6 +121,7 @@ object SecureTokenStore {
     }
 
     fun getRefreshToken(): String? {
+        ensureInitialized()
         val localPrefs = prefs ?: return null
         val localAead = aead ?: return null
         val encoded = localPrefs.getString(PREF_REFRESH_KEY, null) ?: return null
@@ -115,6 +142,7 @@ object SecureTokenStore {
     }
 
     fun clearTokens() {
+        ensureInitialized()
         prefs?.edit {
             remove(PREF_SECRET_KEY)
             remove(PREF_REFRESH_KEY)

@@ -8,7 +8,7 @@ import javax.inject.Singleton
 
 @Singleton
 class TokenProviderImpl @Inject constructor() : TokenProvider {
-    private val _tokenFlow = MutableStateFlow<String?>(SecureTokenStore.getAccessToken())
+    private val _tokenFlow = MutableStateFlow<String?>(null)
     override val tokenFlow: StateFlow<String?> = _tokenFlow.asStateFlow()
 
     override fun getToken(): String? {

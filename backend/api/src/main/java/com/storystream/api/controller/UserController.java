@@ -21,10 +21,7 @@ public class UserController {
         this.jwtService = jwtService;
     }
 
-    /**
-     * Phase 6: Instant upgrade.
-     * Updates subscription tier in DB and returns a refreshed JWT containing the new tier claim.
-     */
+
     @PostMapping("/upgrade")
     public ResponseEntity<?> upgradeToPremium(Principal principal) {
         User user = userRepository.findByEmail(principal.getName())

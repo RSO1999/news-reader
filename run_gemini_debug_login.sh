@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
-export GEMINI_API_KEY="${GEMINI_API_KEY:-}"
+API_KEY="${STORYSTREAM_GEMINI_API_KEY:-${GEMINI_API_KEY:-}}"
+if [ -z "$API_KEY" ]; then
+  echo "Set STORYSTREAM_GEMINI_API_KEY (preferred) or GEMINI_API_KEY before running this script."
+  exit 1
+fi
+export STORYSTREAM_GEMINI_API_KEY="$API_KEY"
+export GEMINI_API_KEY="$API_KEY"
+export ALLOW_GEMINI_DEBUG="${ALLOW_GEMINI_DEBUG:-true}"
 LOG=backend-api.log
-./gradlew :backend:api:bootRun >"$LOG" 2>&1 &
+./backend/api/gradlew -p backend/api bootRun >"$LOG" 2>&1 &
 GRADLE_PID=$!
 trap 'kill $GRADLE_PID 2>/dev/null || true; kill $TAIL_PID 2>/dev/null || true' EXIT
 for i in $(seq 1 60); do
@@ -15,10 +22,12 @@ RESP=$(curl -sS -X POST http://localhost:8080/api/auth/login -H "Content-Type: a
 TOKEN=$(echo "$RESP" | jq -r .token 2>/dev/null || echo "$RESP" | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 PGPASSWORD=password psql -h localhost -U postgres -d storystream -c "UPDATE users SET subscription_tier='PREMIUM' WHERE email='a@gmail.com';"
 ARTICLE_ID=11111111-1111-1111-1111-111111111111
+PGPASSWORD=password psql -h localhost -U postgres -d storystream -c "UPDATE articles SET context_payload = NULL WHERE id = '${ARTICLE_ID}';"
 PGPASSWORD=password psql -h localhost -U postgres -d storystream -c "INSERT INTO articles (id, title, section, snippet, image_url, published_at, source_name, external_url) VALUES ('${ARTICLE_ID}','My Article Title','News','A short snippet with useful keywords', NULL, now(), 'Test', 'https://example.com') ON CONFLICT (id) DO UPDATE SET title='My Article Title', snippet='A short snippet with useful keywords';"
 tail -n +1 -f "$LOG" &
 TAIL_PID=$!
 sleep 1
+curl -sS -H "Authorization: Bearer ${TOKEN}" "http://localhost:8080/internal/debug/gemini/config" | jq .
 curl -sS -H "Authorization: Bearer ${TOKEN}" "http://localhost:8080/api/articles/${ARTICLE_ID}/context" | jq .
 sleep 5
 kill $TAIL_PID 2>/dev/null || true

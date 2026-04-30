@@ -42,11 +42,9 @@ public class AuthController {
             return userRepository.save(created);
         });
 
-        // Test/dev friendliness: reset today's usage for this user so repeated runs are deterministic.
         dailyReadCountRepository.findByUserIdAndReadDate(user.getId(), LocalDate.now())
                 .ifPresent(dailyReadCountRepository::delete);
 
-        // If the user already existed, we just issue a token (dev-friendly behavior).
         String token = jwtService.generateToken(user.getEmail(), user.getSubscriptionTier());
         return Map.of("token", token);
     }

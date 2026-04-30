@@ -1,5 +1,6 @@
 package com.storystream.reader_app.di
 
+import com.storystream.reader_app.BuildConfig
 import com.storystream.reader_app.data.TokenProvider
 import com.storystream.reader_app.network.AuthApi
 import com.storystream.reader_app.network.ArticlesApi
@@ -23,7 +24,7 @@ object DiNetworkModule {
     @Provides
     @Singleton
     @Named("BaseUrl")
-    fun provideBaseUrl(): String = "http://10.0.0.85:8080"
+    fun provideBaseUrl(): String = BuildConfig.BASE_URL
 
     @Provides
     @Singleton

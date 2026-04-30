@@ -5,21 +5,41 @@ services:
     image: postgres:17-alpine
     container_name: storystream-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: storystream
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-storystream}
     ports:
       - "5432:5432"
     volumes:
       - storystream_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d storystream"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-storystream}"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
+  backend:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    container_name: storystream-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-storystream}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      STORYSTREAM_GEMINI_API_KEY: ${STORYSTREAM_GEMINI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ALLOW_GEMINI_DEBUG: ${ALLOW_GEMINI_DEBUG:-false}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   pgadmin:
+    profiles: ["tools"]
     image: dpage/pgadmin4:latest
     container_name: storystream-pgadmin
     environment:

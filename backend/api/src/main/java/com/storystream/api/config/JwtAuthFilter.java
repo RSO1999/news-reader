@@ -31,7 +31,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // If it's already authenticated, don't overwrite.
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
@@ -60,7 +59,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException | IllegalArgumentException ignored) {
-            // Invalid/expired JWT -> treat as anonymous.
             SecurityContextHolder.clearContext();
         }
 

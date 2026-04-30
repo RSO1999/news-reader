@@ -7,6 +7,7 @@ import com.storystream.api.dto.ContextResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -20,9 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Calls the Google Gemini REST API to generate structured article context panels.
- */
+// facade
 @Service
 public class GeminiContextService {
 
@@ -33,6 +32,8 @@ public class GeminiContextService {
     private final String apiKey;
     private final String model;
     private final int maxOutputTokens;
+    private final String apiKeySource;
+    private final String maskedApiKey;
 
     private final ConcurrentHashMap<String, Boolean> inFlight = new ConcurrentHashMap<>();
     private final AtomicReference<String> lastRequestBody = new AtomicReference<>();
@@ -41,12 +42,15 @@ public class GeminiContextService {
             @Value("${storystream.gemini.api-key}") String apiKey,
             @Value("${storystream.gemini.model:gemini-2.5-flash-lite}") String model,
             @Value("${storystream.gemini.max-output-tokens:800}") int maxOutputTokens,
-            RestClient.Builder restClientBuilder
+            RestClient.Builder restClientBuilder,
+            Environment environment
     ) {
         this.apiKey = apiKey;
         this.model = model;
         this.maxOutputTokens = maxOutputTokens;
         this.objectMapper = new ObjectMapper();
+        this.apiKeySource = resolveApiKeySource(environment, apiKey);
+        this.maskedApiKey = maskApiKey(apiKey);
 
         var factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
@@ -56,6 +60,12 @@ public class GeminiContextService {
                 .baseUrl("https://generativelanguage.googleapis.com")
                 .requestFactory(factory)
                 .build();
+
+        log.info("Gemini configuration resolved: model={} apiKeyConfigured={} apiKeySource={} apiKey={}",
+                model,
+                isApiKeyConfigured(),
+                apiKeySource,
+                maskedApiKey);
     }
 
     public ContextResponse getContext(
@@ -70,6 +80,16 @@ public class GeminiContextService {
     ) {
         if (title == null) title = "";
         if (snippet == null) snippet = "";
+
+        if (!isApiKeyConfigured()) {
+            log.error("Gemini API key is not configured. Resolve storystream.gemini.api-key via STORYSTREAM_GEMINI_API_KEY or GEMINI_API_KEY before requesting article context.");
+            return new ContextResponse(List.of(new ContextEntity(
+                    title,
+                    "Gemini API key is not configured on the backend.",
+                    "AI Context (Gemini)",
+                    null
+            )));
+        }
 
         // Coalesce: skip duplicate concurrent calls for same article
         if (inFlight.putIfAbsent(articleId, true) != null) {
@@ -283,5 +303,56 @@ public class GeminiContextService {
     // Getter for debug controller
     public String getLastRequestBody() {
         return lastRequestBody.get();
+    }
+
+    public boolean isApiKeyConfigured() {
+        return apiKey != null && !apiKey.isBlank();
+    }
+
+    public String getApiKeySource() {
+        return apiKeySource;
+    }
+
+    public String getMaskedApiKey() {
+        return maskedApiKey;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    private String resolveApiKeySource(Environment environment, String resolvedApiKey) {
+        String storyStreamEnvKey = environment.getProperty("STORYSTREAM_GEMINI_API_KEY");
+        if (matchesResolvedKey(storyStreamEnvKey, resolvedApiKey)) {
+            return "STORYSTREAM_GEMINI_API_KEY";
+        }
+
+        String genericEnvKey = environment.getProperty("GEMINI_API_KEY");
+        if (matchesResolvedKey(genericEnvKey, resolvedApiKey)) {
+            return "GEMINI_API_KEY";
+        }
+
+        String configuredProperty = environment.getProperty("storystream.gemini.api-key");
+        if (matchesResolvedKey(configuredProperty, resolvedApiKey)) {
+            return "storystream.gemini.api-key";
+        }
+
+        return "unresolved";
+    }
+
+    private boolean matchesResolvedKey(String candidate, String resolvedApiKey) {
+        return candidate != null && !candidate.isBlank() && candidate.equals(resolvedApiKey);
+    }
+
+    private String maskApiKey(String key) {
+        if (key == null || key.isBlank()) {
+            return "<missing>";
+        }
+
+        if (key.length() <= 8) {
+            return "****";
+        }
+
+        return key.substring(0, 4) + "..." + key.substring(key.length() - 4);
     }
 }

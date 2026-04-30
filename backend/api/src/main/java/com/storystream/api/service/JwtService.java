@@ -11,13 +11,10 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    // In a real app, move this to application.yml.
-    // Must be at least 32 characters long.
     private static final String SECRET = "your-super-secret-key-that-is-very-long-and-secure-12345";
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
     public String generateToken(String email) {
-        // Backwards-compatible: default tier claim when not provided.
         return generateToken(email, "FREE");
     }
 
