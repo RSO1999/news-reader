@@ -49,6 +49,7 @@ Edit `.env` and set:
 
 ```dotenv
 STORYSTREAM_GEMINI_API_KEY=replace-with-your-current-gemini-api-key
+# Get a free Gemini API key from https://aistudio.google.com/
 ALLOW_GEMINI_DEBUG=true
 POSTGRES_DB=storystream
 POSTGRES_USER=postgres
